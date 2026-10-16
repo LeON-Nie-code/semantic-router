@@ -78,10 +78,26 @@ for reproducible builds; overriding an image does not make arbitrary base
 distributions compatible. These inputs do not change runtime permissions.
 
 Frontend builds use Rolldown's WASM/WASI fallback when a native binding is
-unavailable, including RISC-V. The fallback is a locked development dependency,
+unavailable. The fallback is a locked development dependency,
 matched to the resolved Rolldown version. `npm run test:bundler` forces this
 path and builds a small frontend; the frontend test gate runs it on native
 binding platforms too. Update both versions together when upgrading Rolldown.
+
+The fallback requires Wasm SIMD support in the builder's Node runtime. Some
+RISC-V Node builds do not provide it, even when the CPU has vector instructions.
+Run `npm run test:bundler` in the chosen frontend builder before a full build;
+`Wasm SIMD unsupported` is a builder limitation, not a Dashboard runtime
+requirement. The deployed Go backend serves static frontend assets and does
+not run Node or Rolldown.
+
+`FRONTEND_ASSETS_IMAGE` can supply prebuilt static files at
+`/workspace/dashboard/frontend/dist`. It defaults to the normal
+`frontend-builder` stage. With an override, BuildKit skips the unused Node and
+WASM build stages; Go and runtime stages still build for the target platform.
+Build the frontend from the same source revision, including its generated DSL
+WASM assets. Transfer the assets in a `FROM scratch` image rather than copying
+host executables or `node_modules` into the runtime image. Pin the asset image
+digest alongside the other build inputs.
 
 ```bash
 make dashboard-build

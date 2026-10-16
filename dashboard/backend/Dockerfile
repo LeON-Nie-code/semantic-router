@@ -2,6 +2,7 @@ ARG IMAGE_REGISTRY=docker.io/
 ARG VLLM_SR_SOURCE_REVISION=unavailable
 ARG WASM_GO_IMAGE=${IMAGE_REGISTRY}library/golang:1.25-alpine
 ARG FRONTEND_IMAGE=${IMAGE_REGISTRY}library/node:20-alpine
+ARG FRONTEND_ASSETS_IMAGE=frontend-builder
 ARG GO_IMAGE=${IMAGE_REGISTRY}library/golang:1.25-bookworm
 ARG RUNTIME_IMAGE=${IMAGE_REGISTRY}library/python:3.11-slim-bookworm
 # Stage 0: Build DSL compiler WASM assets
@@ -50,6 +51,10 @@ COPY --from=wasm-builder /build/signal-compiler.wasm /build/wasm_exec.js ./publi
 RUN npm config set registry https://registry.npmjs.org/ && \
     npm ci --include=dev  # Use npm ci for deterministic, lockfile-based installs in CI
 RUN npm run build
+
+# Static assets may also come from an independently built frontend stage.
+# No executable from this input is run in the target runtime image.
+FROM ${FRONTEND_ASSETS_IMAGE} AS frontend-assets
 
 # Stage 2: Build backend with Go
 FROM ${GO_IMAGE} AS backend-builder
@@ -147,7 +152,7 @@ RUN set -eux; \
 WORKDIR /app
 COPY --from=backend-builder /app/dashboard-backend /app/dashboard-backend
 COPY --from=backend-builder /app/dashboard-backend /usr/local/bin/dashboard-backend
-COPY --from=frontend-builder /workspace/dashboard/frontend/dist /app/frontend
+COPY --from=frontend-assets /workspace/dashboard/frontend/dist /app/frontend
 COPY src/vllm-sr/requirements.txt /app/requirements.txt
 # Public version metadata is imported by the nonroot Python catalog exporter.
 # Do not inherit restrictive permissions from a caller's build context.
