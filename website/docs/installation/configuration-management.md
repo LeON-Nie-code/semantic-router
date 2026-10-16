@@ -140,6 +140,22 @@ history, so Routers whose files share a directory never mix theirs:
   `.vllm-sr/config-backups`.
 - `VLLM_SR_CONFIG_BACKUP_DIR` moves it.
 
+For local stacks on a non-remapped Linux Docker daemon, the CLI instead keeps
+each stack's history under `.vllm-sr-history/<stack-name>/` in its state root.
+Only that stack's directory is mounted at `/app/config-history`. Router and
+Dashboard share the CLI's private group: directories use `2770`, new snapshots
+and locks use `0660`, and management credentials remain outside this mount.
+Existing private records are not imported or granted group access.
+
+The launcher sets `VLLM_SR_CONFIG_BACKUP_DIR` and
+`VLLM_SR_CONFIG_HISTORY_GID` together. A manually configured shared directory
+must already belong to that non-root group. Without this opt-in, histories
+retain their owner-only `0700`/`0600` policy. Rootless/user-namespace Docker,
+Podman, non-Linux launchers and unrecognized daemons retain the existing
+private-history behavior; POSIX shared groups are not supported on Windows.
+Snapshot readers reject linked files rather than following them outside the
+history directory. Do not commit local history: it may contain provider keys.
+
 List the history, newest first, and roll back to a recorded version:
 
 ```bash
