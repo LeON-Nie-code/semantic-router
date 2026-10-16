@@ -103,6 +103,7 @@ dashboard-type-check: dashboard-frontend-deps ## Type-check the frontend
 dashboard-test-frontend: dashboard-frontend-deps ## Run dashboard frontend unit tests
 	@$(LOG_TARGET)
 	@mkdir -p "$(DASHBOARD_TEST_REPORT_DIR)"
+	cd $(DASHBOARD_FRONTEND_DIR) && npm run test:bundler
 	cd $(DASHBOARD_FRONTEND_DIR) && VITEST_EVIDENCE_PATH="$(DASHBOARD_TEST_REPORT_DIR)/frontend.json" \
 		npm run test:unit -- --reporter=default --reporter=junit --reporter=../../tools/ci/vitest_evidence_reporter.mjs --outputFile.junit="$(DASHBOARD_TEST_REPORT_DIR)/frontend.xml"
 	@echo "dashboard/frontend unit tests passed"

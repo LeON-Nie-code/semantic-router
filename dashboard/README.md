@@ -77,6 +77,12 @@ not already installed. `GOPROXY` is also configurable. Pin input image digests
 for reproducible builds; overriding an image does not make arbitrary base
 distributions compatible. These inputs do not change runtime permissions.
 
+Frontend builds use Rolldown's WASM/WASI fallback when a native binding is
+unavailable, including RISC-V. The fallback is a locked development dependency,
+matched to the resolved Rolldown version. `npm run test:bundler` forces this
+path and builds a small frontend; the frontend test gate runs it on native
+binding platforms too. Update both versions together when upgrading Rolldown.
+
 ```bash
 make dashboard-build
 make dashboard-check
