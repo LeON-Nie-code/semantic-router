@@ -2,7 +2,7 @@
 title: 配置管理
 description: 运行中的 Router 如何激活一次配置变更、变更会重建什么、被拒绝的变更如何报告，以及如何列出和回滚版本。
 translation:
-  source_commit: "2e7e0775e88b0fc9426daf7c4fa0fe6e0ec20654"
+  source_commit: "d469ca7ecef232ebff24a5bcbd5bdea87ceb18fe"
   source_file: "docs/installation/configuration-management.md"
   outdated: false
 ---
@@ -96,6 +96,10 @@ Router 把每次激活记录在最近 10 个版本的历史中（`-config-histor
 - 工作区的 `config.yaml` 把历史保存在文件旁边的 `.vllm-sr/config-backups` 中，控制面板的备份也在这里。
 - 其他文件把历史保存在 `.vllm-sr/config-backups` 中以该文件命名的目录里。
 - `VLLM_SR_CONFIG_BACKUP_DIR` 可以改变它的位置。
+
+在未启用用户命名空间映射的 Linux Docker 上，本地 CLI 栈会改用状态目录下的 `.vllm-sr-history/<stack-name>/`。容器只挂载当前栈的子目录到 `/app/config-history`。Router 和控制面板通过 CLI 的私有组共享历史：目录权限为 `2770`，新快照和锁文件为 `0660`；管理凭据不放在这个挂载中。已有私有记录不会被自动导入或扩宽权限。
+
+启动器同时设置 `VLLM_SR_CONFIG_BACKUP_DIR` 和 `VLLM_SR_CONFIG_HISTORY_GID`。手动配置共享目录时，目录必须已属于指定的非 root 组。不启用共享模式时，历史仍使用仅 owner 可访问的 `0700`/`0600` 权限。Rootless 或用户命名空间 Docker、Podman、非 Linux 启动器和无法识别的容器守护进程保留原有私有历史策略；Windows 不支持 POSIX 共享组。读取快照时会拒绝链接文件，避免访问历史目录之外的文件。本地历史可能包含 provider 密钥，不应提交到 Git。
 
 按从新到旧列出历史，并回滚到某个已记录的版本：
 
