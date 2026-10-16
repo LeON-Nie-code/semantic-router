@@ -30,10 +30,15 @@ class DockerCrossCompilationTests(unittest.TestCase):
             (stubs / "dpkg").write_text("#!/bin/sh\necho amd64\n")
             (stubs / "go").write_text(
                 '#!/bin/sh\necho "CC=${CC:-} GOARCH=$GOARCH CGO_ENABLED=$CGO_ENABLED"\n'
+                'if [ "$GOARCH" = riscv64 ]; then printf "%s\\n" "$@"; fi\n'
             )
             for stub in stubs.iterdir():
                 stub.chmod(0o755)
-            for arch, linker in (("arm64", "aarch64-linux-gnu-gcc"), ("amd64", "")):
+            for arch, linker in (
+                ("arm64", "aarch64-linux-gnu-gcc"),
+                ("amd64", ""),
+                ("riscv64", "riscv64-linux-gnu-gcc"),
+            ):
                 with self.subTest(arch=arch):
                     environment = {
                         key: value for key, value in os.environ.items() if key != "CC"
@@ -46,9 +51,11 @@ class DockerCrossCompilationTests(unittest.TestCase):
                         text=True,
                     )
                     self.assertEqual(
-                        result.stdout.strip(),
+                        result.stdout.splitlines()[0],
                         f"CC={linker} GOARCH={arch} CGO_ENABLED=1",
                     )
+                    if arch == "riscv64":
+                        self.assertIn("-extldflags=-L/out/glide", result.stdout)
 
     def test_router_images_share_one_dockerfile_and_publish_their_platforms(
         self,
