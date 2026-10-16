@@ -1878,6 +1878,16 @@ spec:
                       - name
                       type: object
                     type: array
+                  knowledge_bases:
+                    description: |-
+                      KnowledgeBases replaces canonical global.model_catalog.kbs. Omission keeps
+                      the Router defaults; an explicit empty list disables those knowledge bases.
+                      Entries follow the Router-owned knowledge-base configuration contract.
+                    items:
+                      type: object
+                      x-kubernetes-preserve-unknown-fields: true
+                    type: array
+                    x-kubernetes-list-type: atomic
                   model_admission:
                     description: |-
                       ModelAdmission contains canonical global.model_catalog.admission budgets.

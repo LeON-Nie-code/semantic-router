@@ -304,6 +304,15 @@ type ConfigSpec struct {
 	// +kubebuilder:validation:Type=object
 	ModelAdmission *apiextensionsv1.JSON `json:"model_admission,omitempty" yaml:"model_admission,omitempty"`
 
+	// KnowledgeBases replaces canonical global.model_catalog.kbs. Omission keeps
+	// the Router defaults; an explicit empty list disables those knowledge bases.
+	// Entries follow the Router-owned knowledge-base configuration contract.
+	// +optional
+	// +listType=atomic
+	// +kubebuilder:validation:items:Type=object
+	// +kubebuilder:validation:items:XPreserveUnknownFields
+	KnowledgeBases *[]apiextensionsv1.JSON `json:"knowledge_bases,omitempty"`
+
 	// Embedding models configuration (qwen3, gemma, mmbert)
 	// +optional
 	EmbeddingModels *EmbeddingModelsConfig `json:"embedding_models,omitempty"`
@@ -404,7 +413,7 @@ type SemanticCacheConfig struct {
 	// Enabled controls whether semantic caching is active
 	// +kubebuilder:default=true
 	// +optional
-	Enabled bool `json:"enabled,omitempty"`
+	Enabled bool `json:"enabled"`
 
 	// BackendType specifies the cache backend to use
 	// Options: "memory" (default), "redis", "valkey", "milvus", "qdrant", "hybrid"
@@ -1509,7 +1518,7 @@ type ModelRefConfig struct {
 type ToolsConfig struct {
 	// +kubebuilder:default=true
 	// +optional
-	Enabled bool `json:"enabled,omitempty"`
+	Enabled bool `json:"enabled"`
 	// +kubebuilder:default=3
 	// +optional
 	TopK int `json:"top_k,omitempty"`

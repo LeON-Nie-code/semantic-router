@@ -285,6 +285,17 @@ func (in *ConfigSpec) DeepCopyInto(out *ConfigSpec) {
 		*out = new(apiextensionsv1.JSON)
 		(*in).DeepCopyInto(*out)
 	}
+	if in.KnowledgeBases != nil {
+		in, out := &in.KnowledgeBases, &out.KnowledgeBases
+		*out = new([]apiextensionsv1.JSON)
+		if **in != nil {
+			in, out := *in, *out
+			*out = make([]apiextensionsv1.JSON, len(*in))
+			for i := range *in {
+				(*in)[i].DeepCopyInto(&(*out)[i])
+			}
+		}
+	}
 	if in.EmbeddingModels != nil {
 		in, out := &in.EmbeddingModels, &out.EmbeddingModels
 		*out = new(EmbeddingModelsConfig)

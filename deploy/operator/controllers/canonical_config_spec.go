@@ -45,6 +45,9 @@ func (r *SemanticRouterReconciler) applyOperatorModelCatalog(canonical *routerco
 	if err := applyOperatorModelDeployments(canonical, spec); err != nil {
 		return err
 	}
+	if err := applyOperatorKnowledgeBases(canonical, spec); err != nil {
+		return err
+	}
 	if spec.EmbeddingModels != nil {
 		embeddings, err := convertToTypedConfig[routerconfig.EmbeddingModels](r, spec.EmbeddingModels)
 		if err != nil {

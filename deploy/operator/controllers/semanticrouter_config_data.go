@@ -22,7 +22,6 @@ import (
 	"fmt"
 	"reflect"
 
-	"gopkg.in/yaml.v3"
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -98,7 +97,7 @@ func (r *SemanticRouterReconciler) generateConfigYAML(ctx context.Context, sr *v
 		return "", err
 	}
 
-	data, err := yaml.Marshal(config)
+	data, err := marshalOperatorConfig(config, sr.Spec.Config)
 	if err != nil {
 		return "", err
 	}

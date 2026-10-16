@@ -62,6 +62,24 @@ Router image selected in a `SemanticRouter` resource.
 
 ## Choose a sample
 
+`spec.config.knowledge_bases` replaces `global.model_catalog.kbs` in the generated
+Router configuration. Omit it to keep the default knowledge bases, or set it to
+`[]` when no embedding-backed KB is needed. This does not disable domain
+classification or other independently configured routing signals.
+
+```yaml
+spec:
+  config:
+    knowledge_bases: []
+    response_cache:
+      enabled: false
+    tools:
+      enabled: false
+```
+
+Custom knowledge-base entries use the canonical Router fields, including
+`name`, `source`, and `threshold`. The controller rejects unknown entry fields.
+
 The samples are executable CRs, not drop-in production values. Review image
 tags, backend names, namespaces, storage classes, credentials, resources, and
 model paths before applying one.
