@@ -32,3 +32,17 @@ func TestResolveDynamicEnvoyTargetAppliesHostPortOffset(t *testing.T) {
 		t.Fatalf("target=%v err=%v", target, err)
 	}
 }
+
+func TestResolveDynamicEnvoyTargetKeepsStandaloneContainerPort(t *testing.T) {
+	configPath := filepath.Join(t.TempDir(), "runtime.yaml")
+	if err := os.WriteFile(configPath, []byte("version: v0.3\nlisteners:\n  - name: public\n    address: 0.0.0.0\n    port: 19000\n"), 0o600); err != nil {
+		t.Fatal(err)
+	}
+	t.Setenv("VLLM_SR_STACK_NAME", "qualification")
+	t.Setenv("VLLM_SR_PORT_OFFSET", "4000")
+	t.Setenv("VLLM_SR_ENVOY_CONTAINER_NAME", "qualification-vllm-sr-envoy-container")
+	target, err := resolveDynamicEnvoyTarget("http://qualification-vllm-sr-router-container:19000", configPath)
+	if err != nil || target.String() != "http://qualification-vllm-sr-router-container:19000" {
+		t.Fatalf("standalone container target=%v err=%v; must not use the host's published port", target, err)
+	}
+}

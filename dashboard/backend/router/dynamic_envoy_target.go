@@ -70,7 +70,7 @@ func dynamicEnvoyListenerPort(target *url.URL, data []byte) (int, error) {
 		return 0, errors.New("runtime listener is unavailable")
 	}
 	port := listener.Port
-	if !isManagedEnvoyHostname(target.Hostname()) {
+	if !isManagedGatewayHostname(target.Hostname()) {
 		if raw := strings.TrimSpace(os.Getenv("VLLM_SR_PORT_OFFSET")); raw != "" {
 			offset, parseErr := strconv.Atoi(raw)
 			if parseErr != nil || offset < 0 || port+offset > 65535 {
@@ -82,15 +82,19 @@ func dynamicEnvoyListenerPort(target *url.URL, data []byte) (int, error) {
 	return port, nil
 }
 
-func isManagedEnvoyHostname(host string) bool {
-	expected := strings.TrimSpace(os.Getenv("VLLM_SR_ENVOY_CONTAINER_NAME"))
-	if expected == "" {
-		stack := strings.TrimSpace(os.Getenv("VLLM_SR_STACK_NAME"))
-		if stack == "" || stack == "vllm-sr" {
-			expected = "vllm-sr-envoy-container"
-		} else {
-			expected = stack + "-vllm-sr-envoy-container"
+func isManagedGatewayHostname(host string) bool {
+	prefix := "vllm-sr"
+	if stack := strings.TrimSpace(os.Getenv("VLLM_SR_STACK_NAME")); stack != "" && stack != "vllm-sr" {
+		prefix = stack + "-vllm-sr"
+	}
+	for _, service := range []string{"envoy", "router"} {
+		expected := strings.TrimSpace(os.Getenv("VLLM_SR_" + strings.ToUpper(service) + "_CONTAINER_NAME"))
+		if expected == "" {
+			expected = prefix + "-" + service + "-container"
+		}
+		if strings.EqualFold(strings.TrimSpace(host), expected) {
+			return true
 		}
 	}
-	return strings.EqualFold(strings.TrimSpace(host), expected)
+	return false
 }
