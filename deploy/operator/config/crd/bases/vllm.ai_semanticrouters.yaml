@@ -2107,7 +2107,7 @@ spec:
                       enabled:
                         default: true
                         description: Enabled controls whether semantic caching is
-                          active
+                          active. Omission uses true.
                         type: boolean
                       eviction_policy:
                         default: fifo
@@ -2766,7 +2766,7 @@ spec:
                       enabled:
                         default: true
                         description: Enabled controls whether semantic caching is
-                          active
+                          active. Omission uses true.
                         type: boolean
                       eviction_policy:
                         default: fifo
@@ -3424,6 +3424,8 @@ spec:
                     properties:
                       enabled:
                         default: true
+                        description: Enabled controls tool selection. Omission uses
+                          true.
                         type: boolean
                       fallback_to_empty:
                         default: true

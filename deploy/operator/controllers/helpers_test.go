@@ -23,6 +23,7 @@ import (
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
+	"k8s.io/utils/ptr"
 	"sigs.k8s.io/controller-runtime/pkg/client/fake"
 
 	vllmv1alpha1 "github.com/vllm-project/semantic-router/operator/api/v1alpha1"
@@ -217,14 +218,14 @@ func TestValidateSemanticCacheConfig(t *testing.T) {
 		{
 			name: "disabled cache is valid",
 			cache: &vllmv1alpha1.SemanticCacheConfig{
-				Enabled: false,
+				Enabled: ptr.To(false),
 			},
 			expectError: false,
 		},
 		{
 			name: "memory backend is valid without additional config",
 			cache: &vllmv1alpha1.SemanticCacheConfig{
-				Enabled:     true,
+				Enabled:     ptr.To(true),
 				BackendType: "memory",
 			},
 			expectError: false,
@@ -232,7 +233,7 @@ func TestValidateSemanticCacheConfig(t *testing.T) {
 		{
 			name: "empty backend type defaults to memory",
 			cache: &vllmv1alpha1.SemanticCacheConfig{
-				Enabled:     true,
+				Enabled:     ptr.To(true),
 				BackendType: "",
 			},
 			expectError: false,
@@ -240,7 +241,7 @@ func TestValidateSemanticCacheConfig(t *testing.T) {
 		{
 			name: "redis without config fails",
 			cache: &vllmv1alpha1.SemanticCacheConfig{
-				Enabled:     true,
+				Enabled:     ptr.To(true),
 				BackendType: "redis",
 				Redis:       nil,
 			},
@@ -250,7 +251,7 @@ func TestValidateSemanticCacheConfig(t *testing.T) {
 		{
 			name: "redis without host fails",
 			cache: &vllmv1alpha1.SemanticCacheConfig{
-				Enabled:     true,
+				Enabled:     ptr.To(true),
 				BackendType: "redis",
 				Redis: &vllmv1alpha1.RedisCacheConfig{
 					Connection: vllmv1alpha1.RedisCacheConnection{
@@ -264,7 +265,7 @@ func TestValidateSemanticCacheConfig(t *testing.T) {
 		{
 			name: "redis with valid config succeeds",
 			cache: &vllmv1alpha1.SemanticCacheConfig{
-				Enabled:     true,
+				Enabled:     ptr.To(true),
 				BackendType: "redis",
 				Redis: &vllmv1alpha1.RedisCacheConfig{
 					Connection: vllmv1alpha1.RedisCacheConnection{
@@ -278,7 +279,7 @@ func TestValidateSemanticCacheConfig(t *testing.T) {
 		{
 			name: "valkey without config fails",
 			cache: &vllmv1alpha1.SemanticCacheConfig{
-				Enabled:     true,
+				Enabled:     ptr.To(true),
 				BackendType: "valkey",
 				Valkey:      nil,
 			},
@@ -288,7 +289,7 @@ func TestValidateSemanticCacheConfig(t *testing.T) {
 		{
 			name: "valkey without host fails",
 			cache: &vllmv1alpha1.SemanticCacheConfig{
-				Enabled:     true,
+				Enabled:     ptr.To(true),
 				BackendType: "valkey",
 				Valkey: &vllmv1alpha1.ValkeyCacheConfig{
 					Connection: vllmv1alpha1.ValkeyCacheConnection{
@@ -302,7 +303,7 @@ func TestValidateSemanticCacheConfig(t *testing.T) {
 		{
 			name: "valkey with valid config succeeds",
 			cache: &vllmv1alpha1.SemanticCacheConfig{
-				Enabled:     true,
+				Enabled:     ptr.To(true),
 				BackendType: "valkey",
 				Valkey: &vllmv1alpha1.ValkeyCacheConfig{
 					Connection: vllmv1alpha1.ValkeyCacheConnection{
@@ -316,7 +317,7 @@ func TestValidateSemanticCacheConfig(t *testing.T) {
 		{
 			name: "milvus without config fails",
 			cache: &vllmv1alpha1.SemanticCacheConfig{
-				Enabled:     true,
+				Enabled:     ptr.To(true),
 				BackendType: "milvus",
 				Milvus:      nil,
 			},
@@ -326,7 +327,7 @@ func TestValidateSemanticCacheConfig(t *testing.T) {
 		{
 			name: "milvus without host fails",
 			cache: &vllmv1alpha1.SemanticCacheConfig{
-				Enabled:     true,
+				Enabled:     ptr.To(true),
 				BackendType: "milvus",
 				Milvus: &vllmv1alpha1.MilvusCacheConfig{
 					Connection: vllmv1alpha1.MilvusCacheConnection{
@@ -340,7 +341,7 @@ func TestValidateSemanticCacheConfig(t *testing.T) {
 		{
 			name: "milvus with valid config succeeds",
 			cache: &vllmv1alpha1.SemanticCacheConfig{
-				Enabled:     true,
+				Enabled:     ptr.To(true),
 				BackendType: "milvus",
 				Milvus: &vllmv1alpha1.MilvusCacheConfig{
 					Connection: vllmv1alpha1.MilvusCacheConnection{
@@ -354,7 +355,7 @@ func TestValidateSemanticCacheConfig(t *testing.T) {
 		{
 			name: "hybrid without milvus config fails",
 			cache: &vllmv1alpha1.SemanticCacheConfig{
-				Enabled:     true,
+				Enabled:     ptr.To(true),
 				BackendType: "hybrid",
 				Milvus:      nil,
 			},
@@ -364,7 +365,7 @@ func TestValidateSemanticCacheConfig(t *testing.T) {
 		{
 			name: "hybrid with valid config succeeds",
 			cache: &vllmv1alpha1.SemanticCacheConfig{
-				Enabled:     true,
+				Enabled:     ptr.To(true),
 				BackendType: "hybrid",
 				Milvus: &vllmv1alpha1.MilvusCacheConfig{
 					Connection: vllmv1alpha1.MilvusCacheConnection{
@@ -381,7 +382,7 @@ func TestValidateSemanticCacheConfig(t *testing.T) {
 		{
 			name: "qdrant without config fails",
 			cache: &vllmv1alpha1.SemanticCacheConfig{
-				Enabled:     true,
+				Enabled:     ptr.To(true),
 				BackendType: "qdrant",
 				Qdrant:      nil,
 			},
@@ -391,7 +392,7 @@ func TestValidateSemanticCacheConfig(t *testing.T) {
 		{
 			name: "qdrant without host fails",
 			cache: &vllmv1alpha1.SemanticCacheConfig{
-				Enabled:     true,
+				Enabled:     ptr.To(true),
 				BackendType: "qdrant",
 				Qdrant: &vllmv1alpha1.QdrantCacheConfig{
 					Host: "",
@@ -404,7 +405,7 @@ func TestValidateSemanticCacheConfig(t *testing.T) {
 		{
 			name: "qdrant with valid config succeeds",
 			cache: &vllmv1alpha1.SemanticCacheConfig{
-				Enabled:     true,
+				Enabled:     ptr.To(true),
 				BackendType: "qdrant",
 				Qdrant: &vllmv1alpha1.QdrantCacheConfig{
 					Host: "qdrant.cache-backends.svc.cluster.local",
@@ -416,7 +417,7 @@ func TestValidateSemanticCacheConfig(t *testing.T) {
 		{
 			name: "unsupported backend type fails",
 			cache: &vllmv1alpha1.SemanticCacheConfig{
-				Enabled:     true,
+				Enabled:     ptr.To(true),
 				BackendType: "invalid",
 			},
 			expectError: true,
@@ -623,7 +624,7 @@ func TestResolveSemanticCacheSecrets(t *testing.T) {
 				Spec: vllmv1alpha1.SemanticRouterSpec{
 					Config: vllmv1alpha1.ConfigSpec{
 						SemanticCache: &vllmv1alpha1.SemanticCacheConfig{
-							Enabled:     true,
+							Enabled:     ptr.To(true),
 							BackendType: "redis",
 							Redis: &vllmv1alpha1.RedisCacheConfig{
 								Connection: vllmv1alpha1.RedisCacheConnection{
@@ -661,7 +662,7 @@ func TestResolveSemanticCacheSecrets(t *testing.T) {
 				Spec: vllmv1alpha1.SemanticRouterSpec{
 					Config: vllmv1alpha1.ConfigSpec{
 						SemanticCache: &vllmv1alpha1.SemanticCacheConfig{
-							Enabled:     true,
+							Enabled:     ptr.To(true),
 							BackendType: "valkey",
 							Valkey: &vllmv1alpha1.ValkeyCacheConfig{
 								Connection: vllmv1alpha1.ValkeyCacheConnection{
@@ -699,7 +700,7 @@ func TestResolveSemanticCacheSecrets(t *testing.T) {
 				Spec: vllmv1alpha1.SemanticRouterSpec{
 					Config: vllmv1alpha1.ConfigSpec{
 						SemanticCache: &vllmv1alpha1.SemanticCacheConfig{
-							Enabled:     true,
+							Enabled:     ptr.To(true),
 							BackendType: "milvus",
 							Milvus: &vllmv1alpha1.MilvusCacheConfig{
 								Connection: vllmv1alpha1.MilvusCacheConnection{
@@ -741,7 +742,7 @@ func TestResolveSemanticCacheSecrets(t *testing.T) {
 				Spec: vllmv1alpha1.SemanticRouterSpec{
 					Config: vllmv1alpha1.ConfigSpec{
 						SemanticCache: &vllmv1alpha1.SemanticCacheConfig{
-							Enabled:     true,
+							Enabled:     ptr.To(true),
 							BackendType: "redis",
 							Redis: &vllmv1alpha1.RedisCacheConfig{
 								Connection: vllmv1alpha1.RedisCacheConnection{
@@ -770,7 +771,7 @@ func TestResolveSemanticCacheSecrets(t *testing.T) {
 				Spec: vllmv1alpha1.SemanticRouterSpec{
 					Config: vllmv1alpha1.ConfigSpec{
 						SemanticCache: &vllmv1alpha1.SemanticCacheConfig{
-							Enabled:     true,
+							Enabled:     ptr.To(true),
 							BackendType: "valkey",
 							Valkey: &vllmv1alpha1.ValkeyCacheConfig{
 								Connection: vllmv1alpha1.ValkeyCacheConnection{
@@ -825,7 +826,7 @@ func TestConvertToConfigMapWithRedis(t *testing.T) {
 	r := &SemanticRouterReconciler{}
 
 	cache := &vllmv1alpha1.SemanticCacheConfig{
-		Enabled:             true,
+		Enabled:             ptr.To(true),
 		BackendType:         "redis",
 		SimilarityThreshold: "0.85",
 		TTLSeconds:          3600,
@@ -915,7 +916,7 @@ func TestConvertToConfigMapWithMilvus(t *testing.T) {
 	r := &SemanticRouterReconciler{}
 
 	cache := &vllmv1alpha1.SemanticCacheConfig{
-		Enabled:             true,
+		Enabled:             ptr.To(true),
 		BackendType:         "milvus",
 		SimilarityThreshold: "0.90",
 		TTLSeconds:          7200,

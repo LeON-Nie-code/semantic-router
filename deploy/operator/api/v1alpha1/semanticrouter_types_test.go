@@ -23,6 +23,7 @@ import (
 
 	apiextensionsv1 "k8s.io/apiextensions-apiserver/pkg/apis/apiextensions/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/utils/ptr"
 )
 
 func TestEmbeddingModelsConfig(t *testing.T) {
@@ -432,7 +433,7 @@ func TestSemanticCacheEmbeddingModel(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			config := SemanticCacheConfig{
-				Enabled:        true,
+				Enabled:        ptr.To(true),
 				BackendType:    "memory",
 				EmbeddingModel: tt.model,
 			}
@@ -470,7 +471,7 @@ func TestConfigSpecWithNewFields(t *testing.T) {
 					UseCPU:         true,
 				},
 				SemanticCache: &SemanticCacheConfig{
-					Enabled:        true,
+					Enabled:        ptr.To(true),
 					BackendType:    "memory",
 					EmbeddingModel: "qwen3",
 				},
@@ -506,7 +507,7 @@ func TestConfigSpecWithNewFields(t *testing.T) {
 					},
 				},
 				SemanticCache: &SemanticCacheConfig{
-					Enabled:        true,
+					Enabled:        ptr.To(true),
 					BackendType:    "memory",
 					EmbeddingModel: "mmbert",
 				},
@@ -644,7 +645,7 @@ func TestSemanticRouterWithNewFeatures(t *testing.T) {
 							},
 						},
 						SemanticCache: &SemanticCacheConfig{
-							Enabled:        true,
+							Enabled:        ptr.To(true),
 							BackendType:    "memory",
 							EmbeddingModel: "mmbert",
 						},

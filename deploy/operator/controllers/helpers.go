@@ -25,6 +25,7 @@ import (
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/resource"
 	"k8s.io/apimachinery/pkg/types"
+	"k8s.io/utils/ptr"
 
 	vllmv1alpha1 "github.com/vllm-project/semantic-router/operator/api/v1alpha1"
 )
@@ -206,7 +207,7 @@ func (r *SemanticRouterReconciler) resolveSemanticCacheSecrets(
 
 // validateSemanticCacheConfig validates cache configuration consistency
 func validateSemanticCacheConfig(cache *vllmv1alpha1.SemanticCacheConfig) error {
-	if cache == nil || !cache.Enabled {
+	if cache == nil || !ptr.Deref(cache.Enabled, true) {
 		return nil
 	}
 

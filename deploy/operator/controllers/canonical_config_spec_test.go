@@ -22,7 +22,7 @@ func TestBuildCanonicalConfigAppliesOperatorDefaults(t *testing.T) {
 				Strategy:        "priority",
 				ReasoningEffort: "high",
 				Tools: &vllmv1alpha1.ToolsConfig{
-					Enabled:             true,
+					Enabled:             ptr.To(true),
 					TopK:                7,
 					SimilarityThreshold: "0.4",
 					ToolsDBPath:         "/config/tools.json",
@@ -199,7 +199,7 @@ func TestOperatorPIIBackendResolvesInGeneratedRouterConfig(t *testing.T) {
 }
 
 func TestOperatorResponseCacheConfigNormalizesLegacyAndRejectsConflict(t *testing.T) {
-	legacy := &vllmv1alpha1.SemanticCacheConfig{Enabled: true}
+	legacy := &vllmv1alpha1.SemanticCacheConfig{Enabled: ptr.To(true)}
 	got, err := operatorResponseCacheConfig(vllmv1alpha1.ConfigSpec{SemanticCache: legacy})
 	if err != nil || got != legacy {
 		t.Fatalf("legacy response cache = %v, %v", got, err)

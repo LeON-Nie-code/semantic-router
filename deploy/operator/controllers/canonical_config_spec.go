@@ -4,6 +4,7 @@ import (
 	"fmt"
 
 	"gopkg.in/yaml.v3"
+	"k8s.io/utils/ptr"
 
 	vllmv1alpha1 "github.com/vllm-project/semantic-router/operator/api/v1alpha1"
 	routerconfig "github.com/vllm-project/semantic-router/src/semantic-router/pkg/config"
@@ -95,6 +96,7 @@ func (r *SemanticRouterReconciler) applyOperatorStoresAndIntegrations(canonical 
 			return fmt.Errorf("config.response_cache: %w", err)
 		}
 		canonical.Global.Stores.ResponseCache = typedCache
+		canonical.Global.Stores.ResponseCache.Enabled = ptr.Deref(responseCache.Enabled, true)
 	}
 	if spec.Tools != nil {
 		tools, err := convertToTypedConfig[routerconfig.ToolsConfig](r, spec.Tools)
@@ -102,6 +104,7 @@ func (r *SemanticRouterReconciler) applyOperatorStoresAndIntegrations(canonical 
 			return fmt.Errorf("config.tools: %w", err)
 		}
 		canonical.Global.Integrations.Tools = tools
+		canonical.Global.Integrations.Tools.Enabled = ptr.Deref(spec.Tools.Enabled, true)
 	}
 	return nil
 }

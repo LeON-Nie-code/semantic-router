@@ -66,3 +66,31 @@ func TestOperatorRejectsUnknownKnowledgeBaseFields(t *testing.T) {
 		t.Fatal("unknown knowledge-base entry field was silently discarded")
 	}
 }
+
+func TestOperatorOptionalFeatureDefaultsMatchTheCRD(t *testing.T) {
+	for _, tc := range []struct {
+		name, document string
+		want           bool
+	}{
+		{"omitted flags", `{"response_cache":{},"tools":{}}`, true},
+		{"disabled", `{"response_cache":{"enabled":false},"tools":{"enabled":false}}`, false},
+		{"enabled", `{"response_cache":{"enabled":true},"tools":{"enabled":true}}`, true},
+	} {
+		t.Run(tc.name, func(t *testing.T) {
+			var spec vllmv1alpha1.ConfigSpec
+			if err := json.Unmarshal([]byte(tc.document), &spec); err != nil {
+				t.Fatal(err)
+			}
+			r := &SemanticRouterReconciler{}
+			config, err := r.buildCanonicalConfig(context.Background(), &vllmv1alpha1.SemanticRouter{
+				Spec: vllmv1alpha1.SemanticRouterSpec{Config: spec},
+			})
+			if err != nil {
+				t.Fatal(err)
+			}
+			if config.Global.Stores.ResponseCache.Enabled != tc.want || config.Global.Integrations.Tools.Enabled != tc.want {
+				t.Fatalf("cache=%v tools=%v, want %v", config.Global.Stores.ResponseCache.Enabled, config.Global.Integrations.Tools.Enabled, tc.want)
+			}
+		})
+	}
+}

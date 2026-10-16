@@ -6,6 +6,28 @@ import (
 	"testing"
 )
 
+func TestOmittedFeatureFlagsRemainOmittedForAPIDefaulting(t *testing.T) {
+	for _, field := range []string{"response_cache", "semantic_cache", "tools"} {
+		t.Run(field, func(t *testing.T) {
+			var config ConfigSpec
+			if err := json.Unmarshal([]byte(`{"`+field+`":{}}`), &config); err != nil {
+				t.Fatal(err)
+			}
+			data, err := json.Marshal(config)
+			if err != nil {
+				t.Fatal(err)
+			}
+			var result map[string]map[string]interface{}
+			if err := json.Unmarshal(data, &result); err != nil {
+				t.Fatal(err)
+			}
+			if _, present := result[field]["enabled"]; present {
+				t.Fatalf("typed client replaced omission with an explicit value: %s", data)
+			}
+		})
+	}
+}
+
 func TestExplicitlyDisabledFeatureFlagsSurviveTypedClients(t *testing.T) {
 	for _, field := range []string{"response_cache", "semantic_cache", "tools"} {
 		t.Run(field, func(t *testing.T) {

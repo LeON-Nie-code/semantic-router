@@ -1147,7 +1147,7 @@ _Appears in:_
 
 | Field | Description | Default | Validation |
 | --- | --- | --- | --- |
-| `enabled` _boolean_ | Enabled controls whether semantic caching is active | true | Optional: \{\} <br /> |
+| `enabled` _boolean_ | Enabled controls whether semantic caching is active. Omission uses true. | true | Optional: \{\} <br /> |
 | `backend_type` _string_ | BackendType specifies the cache backend to use<br />Options: "memory" (default), "redis", "valkey", "milvus", "qdrant", "hybrid" | memory | Enum: [memory redis valkey milvus qdrant hybrid] <br />Optional: \{\} <br /> |
 | `similarity_threshold` _string_ | Similarity threshold for cache hits (0.0-1.0). Stored as string to avoid float precision issues. | 0.8 | Pattern: `^0(\.[0-9]+)?$\|^1(\.0+)?$` <br />Optional: \{\} <br /> |
 | `max_entries` _integer_ | MaxEntries is the maximum number of cache entries (for memory/hybrid backends) | 1000 | Optional: \{\} <br /> |
@@ -1364,7 +1364,7 @@ _Appears in:_
 
 | Field | Description | Default | Validation |
 | --- | --- | --- | --- |
-| `enabled` _boolean_ |  | true | Optional: \{\} <br /> |
+| `enabled` _boolean_ | Enabled controls tool selection. Omission uses true. | true | Optional: \{\} <br /> |
 | `top_k` _integer_ |  | 3 | Optional: \{\} <br /> |
 | `similarity_threshold` _string_ | Similarity threshold for tool selection (0.0-1.0). Stored as string to avoid float precision issues. | 0.2 | Pattern: `^0(\.[0-9]+)?$\|^1(\.0+)?$` <br />Optional: \{\} <br /> |
 | `tools_db_path` _string_ |  | config/tools_db.json | Optional: \{\} <br /> |

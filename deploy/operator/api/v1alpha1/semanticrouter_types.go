@@ -410,10 +410,10 @@ type StreamedBodyConfig struct {
 
 // SemanticCacheConfig defines semantic cache configuration
 type SemanticCacheConfig struct {
-	// Enabled controls whether semantic caching is active
+	// Enabled controls whether semantic caching is active. Omission uses true.
 	// +kubebuilder:default=true
 	// +optional
-	Enabled bool `json:"enabled"`
+	Enabled *bool `json:"enabled,omitempty"`
 
 	// BackendType specifies the cache backend to use
 	// Options: "memory" (default), "redis", "valkey", "milvus", "qdrant", "hybrid"
@@ -1516,9 +1516,10 @@ type ModelRefConfig struct {
 
 // ToolsConfig defines tools configuration
 type ToolsConfig struct {
+	// Enabled controls tool selection. Omission uses true.
 	// +kubebuilder:default=true
 	// +optional
-	Enabled bool `json:"enabled"`
+	Enabled *bool `json:"enabled,omitempty"`
 	// +kubebuilder:default=3
 	// +optional
 	TopK int `json:"top_k,omitempty"`
