@@ -85,7 +85,9 @@ if [ "$current_bytes" -gt "$max_bytes" ]; then
     current_bytes=$(wc -c < "$spool_file")
 fi
 
-mkfifo -m 600 "$fifo"
+# umask 077 already yields 0600. Avoid a post-creation chmod syscall that
+# newer coreutils may issue but older container seccomp profiles reject.
+mkfifo "$fifo"
 (
     umask "$service_umask"
     exec "$@"
