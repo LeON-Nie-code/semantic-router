@@ -404,7 +404,7 @@ type SemanticCacheConfig struct {
 	// Enabled controls whether semantic caching is active
 	// +kubebuilder:default=true
 	// +optional
-	Enabled bool `json:"enabled,omitempty"`
+	Enabled bool `json:"enabled"`
 
 	// BackendType specifies the cache backend to use
 	// Options: "memory" (default), "redis", "valkey", "milvus", "qdrant", "hybrid"
@@ -1509,7 +1509,7 @@ type ModelRefConfig struct {
 type ToolsConfig struct {
 	// +kubebuilder:default=true
 	// +optional
-	Enabled bool `json:"enabled,omitempty"`
+	Enabled bool `json:"enabled"`
 	// +kubebuilder:default=3
 	// +optional
 	TopK int `json:"top_k,omitempty"`
