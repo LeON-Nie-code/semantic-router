@@ -211,20 +211,24 @@ func recordFileID(name string) (string, bool) {
 }
 
 func ensurePrivateDir(dir string) error {
-	if err := os.MkdirAll(dir, 0o700); err != nil {
-		return err
-	}
-	return os.Chmod(dir, 0o700)
+	return historylock.PrepareDirectory(dir)
 }
 
 // writePrivateFile creates path for its owner only and syncs it; it fails with
 // os.ErrExist when the file exists.
 func writePrivateFile(path string, data []byte) error {
-	file, err := os.OpenFile(path, os.O_WRONLY|os.O_CREATE|os.O_EXCL, 0o600)
+	mode, err := historylock.FileMode(filepath.Dir(path))
 	if err != nil {
 		return err
 	}
-	_, writeErr := file.Write(data)
+	file, err := os.OpenFile(path, os.O_WRONLY|os.O_CREATE|os.O_EXCL, mode)
+	if err != nil {
+		return err
+	}
+	writeErr := file.Chmod(mode)
+	if writeErr == nil {
+		_, writeErr = file.Write(data)
+	}
 	syncErr := file.Sync()
 	closeErr := file.Close()
 	if err := errors.Join(writeErr, syncErr, closeErr); err != nil {

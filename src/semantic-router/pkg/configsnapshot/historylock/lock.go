@@ -6,7 +6,6 @@ package historylock
 import (
 	"errors"
 	"fmt"
-	"os"
 	"path/filepath"
 	"time"
 
@@ -22,15 +21,35 @@ const wait = 10 * time.Second
 // Lock holds the lock of the history directory dir, which it creates private
 // to its owner, until unlock is called.
 func Lock(dir string) (unlock func(), err error) {
-	if err = os.MkdirAll(dir, 0o700); err != nil {
+	if err = PrepareDirectory(dir); err != nil {
 		return nil, err
 	}
-	if err = os.Chmod(dir, 0o700); err != nil {
+	mode, err := FileMode(dir)
+	if err != nil {
 		return nil, err
 	}
-	fd, err := unix.Open(filepath.Join(dir, name), unix.O_RDWR|unix.O_CREAT|unix.O_CLOEXEC|unix.O_NOFOLLOW, 0o600)
+	flags := unix.O_RDWR | unix.O_CLOEXEC | unix.O_NOFOLLOW
+	fd, err := unix.Open(filepath.Join(dir, name), flags|unix.O_CREAT|unix.O_EXCL, uint32(mode))
+	created := err == nil
+	if errors.Is(err, unix.EEXIST) {
+		fd, err = unix.Open(filepath.Join(dir, name), flags, 0)
+	}
 	if err != nil {
 		return nil, fmt.Errorf("open the lock of %s: %w", dir, err)
+	}
+	var info unix.Stat_t
+	if err = unix.Fstat(fd, &info); err == nil {
+		if info.Mode&unix.S_IFMT != unix.S_IFREG || info.Nlink != 1 {
+			err = errors.New("history lock must be a private regular file")
+		} else if created {
+			err = unix.Fchmod(fd, uint32(mode))
+		} else if info.Mode&0o777 != uint32(mode) {
+			err = errors.New("history lock permissions do not match its directory policy")
+		}
+	}
+	if err != nil {
+		_ = unix.Close(fd)
+		return nil, err
 	}
 	deadline := time.Now().Add(wait)
 	for {

@@ -17,12 +17,12 @@ import (
 
 // config.yaml can carry plaintext provider credentials, so every copy the
 // Dashboard writes is readable only by the user it runs as.
-const (
-	configSnapshotDirMode  os.FileMode = 0o700
-	configSnapshotFileMode os.FileMode = 0o600
-)
+const configSnapshotFileMode os.FileMode = 0o600
 
 func configBackupDir(configDir string) string {
+	if configured := strings.TrimSpace(os.Getenv("VLLM_SR_CONFIG_BACKUP_DIR")); filepath.IsAbs(configured) {
+		return filepath.Clean(configured)
+	}
 	return filepath.Join(configDir, ".vllm-sr", "config-backups")
 }
 
@@ -32,20 +32,7 @@ func ensureConfigSnapshotDir(dir string) error {
 	if err := os.MkdirAll(filepath.Dir(dir), 0o755); err != nil {
 		return err
 	}
-	if err := os.MkdirAll(dir, configSnapshotDirMode); err != nil {
-		return err
-	}
-	info, err := os.Lstat(dir)
-	if err != nil {
-		return err
-	}
-	if info.Mode()&os.ModeSymlink != 0 {
-		return fmt.Errorf("config snapshot directory %s is a symlink", dir)
-	}
-	if info.Mode().Perm() == configSnapshotDirMode {
-		return nil
-	}
-	return os.Chmod(dir, configSnapshotDirMode)
+	return historylock.PrepareDirectory(dir)
 }
 
 // A snapshot never overwrites in place: the old inode keeps its old mode until a
@@ -140,7 +127,28 @@ func rejectUnsafeSnapshotTarget(path string) error {
 // O_EXCL with an unpredictable name means the descriptor is always a file this
 // process just created at 0600, never one that already existed.
 func createConfigSnapshotTemp(path string) (*os.File, error) {
-	return os.CreateTemp(filepath.Dir(path), "."+filepath.Base(path)+".*.tmp")
+	mode, err := configSnapshotMode(path)
+	if err != nil {
+		return nil, err
+	}
+	temp, err := os.CreateTemp(filepath.Dir(path), "."+filepath.Base(path)+".*.tmp")
+	if err != nil {
+		return nil, err
+	}
+	if err := temp.Chmod(mode); err != nil {
+		_ = temp.Close()
+		_ = os.Remove(temp.Name())
+		return nil, err
+	}
+	return temp, nil
+}
+
+func configSnapshotMode(path string) (os.FileMode, error) {
+	historyDir := strings.TrimSpace(os.Getenv("VLLM_SR_CONFIG_BACKUP_DIR"))
+	if filepath.IsAbs(historyDir) && filepath.Clean(filepath.Dir(path)) == filepath.Clean(historyDir) {
+		return historylock.FileMode(historyDir)
+	}
+	return configSnapshotFileMode, nil
 }
 
 func writeAndCloseSnapshotTemp(temp *os.File, data []byte) error {
@@ -207,10 +215,15 @@ func repairSnapshotFilePermissions(path string) {
 	if err != nil || !info.Mode().IsRegular() {
 		return
 	}
-	if info.Mode().Perm() == configSnapshotFileMode {
+	mode, err := configSnapshotMode(path)
+	if err != nil {
+		log.Printf("Warning: cannot resolve config snapshot permissions: %v", err)
 		return
 	}
-	if err := os.Chmod(path, configSnapshotFileMode); err != nil {
+	if info.Mode().Perm() == mode {
+		return
+	}
+	if err := os.Chmod(path, mode); err != nil {
 		log.Printf("Warning: failed to restrict permissions on config snapshot %s: %v", path, err)
 		return
 	}

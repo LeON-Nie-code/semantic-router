@@ -4,12 +4,39 @@ import (
 	"context"
 	"os"
 	"path/filepath"
+	"strconv"
 	"strings"
 	"testing"
 	"time"
 
 	"github.com/vllm-project/semantic-router/src/semantic-router/pkg/config"
 )
+
+func TestDirStoreSharesSnapshotsOnlyWithConfiguredPrivateGroup(t *testing.T) {
+	if os.Getegid() == 0 {
+		t.Skip("root group is never a shared history group")
+	}
+	t.Setenv("VLLM_SR_CONFIG_HISTORY_GID", strconv.Itoa(os.Getegid()))
+	dir := filepath.Join(t.TempDir(), "history")
+	if err := os.Mkdir(dir, 0o700); err != nil {
+		t.Fatal(err)
+	}
+	store := NewDirStore(dir)
+	saved, err := store.Save(Record{ID: "20261006-123000", Document: []byte("provider: synthetic-secret\n")})
+	if err != nil {
+		t.Fatal(err)
+	}
+	for _, suffix := range []string{".yaml", ".source", ".snapshot.json"} {
+		info, statErr := os.Stat(filepath.Join(dir, "config."+saved.ID+suffix))
+		if statErr != nil || info.Mode().Perm() != 0o660 {
+			t.Fatalf("shared history record %s permissions: %v, %v", suffix, info, statErr)
+		}
+	}
+	loaded, err := store.Load()
+	if err != nil || len(loaded) != 1 || string(loaded[0].Document) != "provider: synthetic-secret\n" {
+		t.Fatalf("shared history roundtrip failed: records=%+v err=%v", loaded, err)
+	}
+}
 
 func TestHistoryKeepsTheNewestRecordsAndTheActiveVersion(t *testing.T) {
 	h, err := NewHistory(2, nil)

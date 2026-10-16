@@ -1,4 +1,5 @@
 import subprocess
+from pathlib import Path
 from types import SimpleNamespace
 
 import pytest
@@ -128,15 +129,23 @@ def test_managed_recipe_rejects_symbolic_link_assets(tmp_path, target):
         resolve_active_recipe_directory(config_path)
 
 
-def test_managed_recipe_runtime_state_stays_under_vllm_sr(tmp_path):
+def test_managed_recipe_runtime_state_uses_private_mutable_roots(tmp_path):
     config_path = _write_managed_recipe(tmp_path)
 
-    _, runtime_paths, _ = container_start._prepare_runtime_paths(str(config_path))
+    _, runtime_paths, _ = container_start._prepare_runtime_paths(
+        str(config_path), shared_history=True
+    )
 
     assert runtime_paths["models_dir"] == str(tmp_path / ".vllm-sr" / "models")
     assert not (tmp_path / "models").exists()
+    history = Path(runtime_paths["history_dir"])
+    assert history.parent == tmp_path / ".vllm-sr-history"
+    assert history.parent.stat().st_mode & 0o777 == 0o700
+    assert not history.is_relative_to(tmp_path / ".vllm-sr")
     visible_entries = {
-        path.name for path in tmp_path.iterdir() if path.name != ".vllm-sr"
+        path.name
+        for path in tmp_path.iterdir()
+        if path.name not in {".vllm-sr", ".vllm-sr-history"}
     }
     assert visible_entries == {
         "config.yaml",
