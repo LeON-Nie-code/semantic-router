@@ -71,7 +71,45 @@ The Operator configures external Redis, Valkey, Milvus, Qdrant, KServe, Llama
 Stack, and model-serving resources; it does not create those systems unless a
 specific reconciler explicitly says otherwise.
 
+To disable response caching and tool retrieval, set both switches explicitly:
+
+```yaml
+spec:
+  config:
+    response_cache:
+      enabled: false
+    tools:
+      enabled: false
+```
+
+Explicit `false` values are preserved when the Operator updates the resource.
+Omitting the whole block keeps the existing defaults. Go clients constructing
+an empty `SemanticCacheConfig` or `ToolsConfig` send `enabled: false`; set it to
+`true` to enable the feature. This does not disable separately configured
+embedding signals, KB rules, or other embedding consumers. Unreferenced default
+KB catalog entries alone do not require embedding inference.
+
 ## Deployment modes
+
+### Portable controller candidate
+
+`Dockerfile.portable` cross-compiles the controller on the build host and copies
+the static binary and public CA bundle into a scratch image. It supports build
+targets amd64, arm64 and riscv64 and runs as UID 65532. The existing UBI image
+and its defaults are unchanged.
+
+```bash
+docker buildx build --platform linux/amd64,linux/arm64,linux/riscv64 \
+  -f deploy/operator/Dockerfile.portable \
+  -t registry.example.com/operator-portable:dev .
+```
+
+Use the maintained ServiceAccount, RBAC and leader-election resources; do not
+mount an administrator kubeconfig into the controller. Runtime qualification
+must check the actual target image, non-root execution, probes, reconciliation,
+configuration changes and restart recovery. Cross compilation alone is not a
+platform support claim. Pin `GO_IMAGE` to an immutable reference for a release
+candidate. The portable image does not change which Router image a CR selects.
 
 ### Standalone (default)
 
