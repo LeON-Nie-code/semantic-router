@@ -63,13 +63,13 @@ func (s *DirStore) Load() ([]Record, error) {
 
 func (s *DirStore) load(id string) (Record, error) {
 	record := Record{ID: id}
-	document, docErr := os.ReadFile(s.path(id, recordDocumentSuffix))
+	document, docErr := historylock.ReadSnapshot(s.path(id, recordDocumentSuffix))
 	if docErr == nil {
 		record.Document = document
 	} else if !errors.Is(docErr, os.ErrNotExist) {
 		return Record{}, fmt.Errorf("read configuration record %s: %w", id, docErr)
 	}
-	meta, metaErr := os.ReadFile(s.path(id, recordSnapshotSuffix))
+	meta, metaErr := historylock.ReadSnapshot(s.path(id, recordSnapshotSuffix))
 	switch {
 	case metaErr == nil:
 		if err := json.Unmarshal(meta, &record); err != nil {
@@ -90,7 +90,7 @@ func (s *DirStore) load(id string) (Record, error) {
 
 // legacySource reads the source a pre-snapshot backup recorded, if any.
 func (s *DirStore) legacySource(id string) Source {
-	data, err := os.ReadFile(s.path(id, recordSourceSuffix))
+	data, err := historylock.ReadSnapshot(s.path(id, recordSourceSuffix))
 	if err != nil {
 		return ""
 	}
@@ -211,20 +211,24 @@ func recordFileID(name string) (string, bool) {
 }
 
 func ensurePrivateDir(dir string) error {
-	if err := os.MkdirAll(dir, 0o700); err != nil {
-		return err
-	}
-	return os.Chmod(dir, 0o700)
+	return historylock.PrepareDirectory(dir)
 }
 
 // writePrivateFile creates path for its owner only and syncs it; it fails with
 // os.ErrExist when the file exists.
 func writePrivateFile(path string, data []byte) error {
-	file, err := os.OpenFile(path, os.O_WRONLY|os.O_CREATE|os.O_EXCL, 0o600)
+	mode, err := historylock.FileMode(filepath.Dir(path))
 	if err != nil {
 		return err
 	}
-	_, writeErr := file.Write(data)
+	file, err := os.OpenFile(path, os.O_WRONLY|os.O_CREATE|os.O_EXCL, mode)
+	if err != nil {
+		return err
+	}
+	writeErr := file.Chmod(mode)
+	if writeErr == nil {
+		_, writeErr = file.Write(data)
+	}
 	syncErr := file.Sync()
 	closeErr := file.Close()
 	if err := errors.Join(writeErr, syncErr, closeErr); err != nil {

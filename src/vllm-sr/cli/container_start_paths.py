@@ -22,6 +22,7 @@ from cli.commands.runtime_paths import (
     materialize_runtime_config,
 )
 from cli.container_log_spool import prepare_runtime_log_spool
+from cli.history_permissions import prepare_history
 from cli.instance_paths import prepare_instance_control_directory
 from cli.recipe_directory import resolve_active_recipe_directory
 from cli.runtime_stack import RuntimeStackLayout, resolve_runtime_stack
@@ -63,6 +64,7 @@ def _prepare_runtime_paths(
     runtime_config_file=None,
     state_root_dir=None,
     stack_layout: RuntimeStackLayout | None = None,
+    shared_history: bool = False,
 ):
     stack_layout = stack_layout or resolve_runtime_stack()
     source_config_path = os.path.abspath(config_file)
@@ -106,6 +108,13 @@ def _prepare_runtime_paths(
     )
 
     log_spool = prepare_runtime_log_spool(vllm_sr_dir, stack_layout.stack_name)
+    # Its parent is never mounted into a container.
+    history_dir = ""
+    if shared_history:
+        history_dir = os.path.join(
+            config_dir, ".vllm-sr-history", stack_layout.stack_name
+        )
+        prepare_history(history_dir, cli_user_share_gid())
     instance_directory = prepare_instance_control_directory(
         config_dir, stack_layout.stack_name
     )
@@ -133,6 +142,7 @@ def _prepare_runtime_paths(
             "source_config_path": source_config_path,
             "effective_config_path": effective_config_path,
             "vllm_sr_dir": vllm_sr_dir,
+            "history_dir": history_dir,
             "models_dir": models_dir,
             "dashboard_data_dir": dashboard_data_dir,
             "recipe_store_dir": recipe_store_dir,
@@ -168,6 +178,8 @@ def _runtime_mount_specs(
         f"{runtime_paths['vllm_sr_dir']}:/app/.vllm-sr:z",
         f"{runtime_paths['log_spool_logs_root']}:/app/.vllm-sr/logs:ro,z",
     ]
+    if runtime_paths.get("history_dir"):
+        mounts.append(f"{runtime_paths['history_dir']}:/app/config-history:z")
     if include_models:
         mounts.append(f"{runtime_paths['models_dir']}:/app/models:z")
     if include_dashboard_data:

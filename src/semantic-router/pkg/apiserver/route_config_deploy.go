@@ -19,6 +19,7 @@ import (
 
 	"github.com/vllm-project/semantic-router/src/semantic-router/pkg/config"
 	"github.com/vllm-project/semantic-router/src/semantic-router/pkg/configsnapshot"
+	"github.com/vllm-project/semantic-router/src/semantic-router/pkg/configsnapshot/historylock"
 	"github.com/vllm-project/semantic-router/src/semantic-router/pkg/k8s/configwriter"
 	"github.com/vllm-project/semantic-router/src/semantic-router/pkg/observability/logging"
 )
@@ -189,7 +190,7 @@ func (s *ClassificationAPIServer) loadRollbackBackup(
 	backupFile string,
 	version string,
 ) ([]byte, *config.RouterConfig, bool) {
-	backupData, err := os.ReadFile(backupFile)
+	backupData, err := historylock.ReadSnapshot(backupFile)
 	if err != nil {
 		s.writeErrorResponse(
 			w,
@@ -545,7 +546,7 @@ func writePrivateConfigArtifact(path string, data []byte) error {
 }
 
 func readConfigVersionSource(backupDir, version string) configVersionSource {
-	data, err := os.ReadFile(configVersionSourcePath(backupDir, version))
+	data, err := historylock.ReadSnapshot(configVersionSourcePath(backupDir, version))
 	if err != nil {
 		return configVersionSourceUnknown
 	}

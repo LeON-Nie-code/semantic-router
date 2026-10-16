@@ -126,13 +126,14 @@ def _read_exact_recipe_files(recipe_dir: Path) -> dict[str, bytes]:
         raise RecipePackageError(f"Recipe directory does not exist: {recipe_dir}")
 
     entries = {entry.name: entry for entry in recipe_dir.iterdir()}
-    runtime_state = entries.pop(".vllm-sr", None)
-    if runtime_state is not None and (
-        runtime_state.is_symlink() or not runtime_state.is_dir()
-    ):
-        raise RecipePackageError(
-            "The optional .vllm-sr runtime state entry must be a real directory"
-        )
+    for state_name in (".vllm-sr", ".vllm-sr-history"):
+        runtime_state = entries.pop(state_name, None)
+        if runtime_state is not None and (
+            runtime_state.is_symlink() or not runtime_state.is_dir()
+        ):
+            raise RecipePackageError(
+                f"The optional {state_name} runtime state entry must be a real directory"
+            )
     expected = set(RECIPE_FILES)
     missing = sorted(expected - set(entries))
     extra = sorted(set(entries) - expected)
@@ -144,7 +145,7 @@ def _read_exact_recipe_files(recipe_dir: Path) -> dict[str, bytes]:
             details.append(f"unexpected {', '.join(extra)}")
         raise RecipePackageError(
             "Recipe source must contain the five managed files and only optional "
-            ".vllm-sr runtime state: " + "; ".join(details)
+            ".vllm-sr/.vllm-sr-history runtime state: " + "; ".join(details)
         )
 
     files: dict[str, bytes] = {}

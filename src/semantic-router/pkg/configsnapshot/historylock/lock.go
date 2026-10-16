@@ -6,7 +6,6 @@ package historylock
 import (
 	"errors"
 	"fmt"
-	"os"
 	"path/filepath"
 	"time"
 )
@@ -23,13 +22,14 @@ var errLocked = errors.New("locked by another writer")
 // Lock holds the lock of the history directory dir, which it creates private
 // to its owner, until unlock is called.
 func Lock(dir string) (unlock func(), err error) {
-	if err = os.MkdirAll(dir, 0o700); err != nil {
+	if err = PrepareDirectory(dir); err != nil {
 		return nil, err
 	}
-	if err = os.Chmod(dir, 0o700); err != nil {
+	mode, err := FileMode(dir)
+	if err != nil {
 		return nil, err
 	}
-	file, err := openLock(filepath.Join(dir, name))
+	file, err := openLock(filepath.Join(dir, name), mode)
 	if err != nil {
 		return nil, fmt.Errorf("open the lock of %s: %w", dir, err)
 	}

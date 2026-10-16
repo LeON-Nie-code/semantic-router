@@ -5,6 +5,7 @@ import os
 from cli.commands.runtime_management_credentials import (
     management_credential_env_names,
 )
+from cli.commands.runtime_paths import cli_user_share_gid
 from cli.commands.runtime_support import (
     RECIPE_ENV_ALLOWLIST_ENV,
     sensitive_env_names,
@@ -57,6 +58,7 @@ from cli.gateway_mode import (
     GATEWAY_STANDALONE,
     runs_envoy,
 )
+from cli.history_permissions import supports_shared_history
 from cli.management_credential import stack_management_credential
 from cli.parser import parse_user_config
 from cli.recipe_topology_contract import MANAGEMENT_CREDENTIAL_ENV
@@ -128,17 +130,20 @@ def container_start_vllm_sr(
     nofile_limit = _resolve_nofile_limit()
 
     runtime_network_name = network_name or stack_layout.network_name
+    shared_history = supports_shared_history(runtime)
     config_dir, runtime_paths, runtime_container_config = _prepare_runtime_paths(
         config_file,
         runtime_config_file=runtime_config_file,
         state_root_dir=state_root_dir,
         stack_layout=stack_layout,
+        shared_history=shared_history,
     )
     common_env = _build_common_runtime_env(
         env_vars,
         stack_layout,
         runtime_container_config=runtime_container_config,
         recipe_store_dir=runtime_paths["container_recipe_store_dir"],
+        shared_history=shared_history,
     )
     # Config realization inside the containers follows the stack's listener.
     common_env[GATEWAY_ENV] = gateway
@@ -249,6 +254,7 @@ def _build_common_runtime_env(
     *,
     runtime_container_config: str | None,
     recipe_store_dir: str | None = None,
+    shared_history: bool = True,
 ):
     common_env = dict(env_vars or {})
     # Signing authority belongs to Dashboard, never to recipe/data-plane env.
@@ -266,6 +272,15 @@ def _build_common_runtime_env(
     common_env["VLLM_SR_SOURCE_CONFIG_PATH"] = runtime_container_config
     common_env["VLLM_SR_STATE_ROOT_DIR"] = "/app"
     common_env["VLLM_SR_CONFIG_BASE_DIR"] = "/app"
+    # Both authorized configuration writers share this one history, not
+    # their private management credentials or Dashboard session databases.
+    common_env.pop("VLLM_SR_CONFIG_HISTORY_ROOT", None)
+    if shared_history:
+        common_env["VLLM_SR_CONFIG_HISTORY_GID"] = str(cli_user_share_gid())
+        common_env["VLLM_SR_CONFIG_BACKUP_DIR"] = "/app/config-history"
+    else:
+        common_env.pop("VLLM_SR_CONFIG_HISTORY_GID", None)
+        common_env.pop("VLLM_SR_CONFIG_BACKUP_DIR", None)
     common_env[PORT_OFFSET_ENV] = str(stack_layout.port_offset)
     if recipe_store_dir:
         common_env["VLLM_SR_RECIPE_STORE_DIR"] = recipe_store_dir

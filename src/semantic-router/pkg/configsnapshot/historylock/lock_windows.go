@@ -5,6 +5,7 @@ package historylock
 import (
 	"errors"
 	"fmt"
+	"os"
 
 	"golang.org/x/sys/windows"
 )
@@ -16,7 +17,7 @@ type lockFile windows.Handle
 // writer cannot be pointed at another file's lock. The directory's mode bits
 // do not restrict access on Windows the way they do elsewhere, so the lock
 // file inherits the history directory's ACL.
-func openLock(path string) (lockFile, error) {
+func openLock(path string, _ os.FileMode) (lockFile, error) {
 	name, err := windows.UTF16PtrFromString(path)
 	if err != nil {
 		return 0, err

@@ -121,10 +121,13 @@ def test_pack_rejects_invalid_directories(tmp_path: Path, invalid: str):
         pack_recipe(recipe, tmp_path / "invalid.zip")
 
 
-def test_pack_ignores_real_cli_runtime_state_but_rejects_symlink(tmp_path: Path):
+@pytest.mark.parametrize("state_name", [".vllm-sr", ".vllm-sr-history"])
+def test_pack_ignores_real_cli_runtime_state_but_rejects_symlink(
+    tmp_path: Path, state_name
+):
     recipe = tmp_path / "recipe"
     _write_recipe(recipe)
-    runtime_state = recipe / ".vllm-sr"
+    runtime_state = recipe / state_name
     runtime_state.mkdir()
     (runtime_state / "runtime-config.yaml").write_text(
         "private runtime state\n", encoding="utf-8"
