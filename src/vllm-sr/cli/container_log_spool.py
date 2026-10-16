@@ -85,7 +85,9 @@ if [ "$current_bytes" -gt "$max_bytes" ]; then
     current_bytes=$(wc -c < "$spool_file")
 fi
 
-mkfifo -m 600 "$fifo"
+# umask 077 already gives mode 0600 at creation. Avoid a separate chmod,
+# which newer coreutils may implement with a syscall blocked by older runtimes.
+mkfifo "$fifo"
 (
     umask "$service_umask"
     exec "$@"
