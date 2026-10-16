@@ -55,6 +55,28 @@ The current installation and first-run workflow is documented in
 
 ## Build and test
 
+The container build accepts `WASM_GO_IMAGE`, `FRONTEND_IMAGE`, `GO_IMAGE`, and
+`RUNTIME_IMAGE` overrides. Their defaults remain the Go, Node and Python images
+used by CI. Use native build inputs when those images do not publish the target
+architecture, for example on a RISC-V BuildKit worker:
+
+```bash
+docker buildx build --platform linux/riscv64 \
+  --build-arg WASM_GO_IMAGE=registry.example.com/native-go:1.25 \
+  --build-arg FRONTEND_IMAGE=registry.example.com/native-node:20 \
+  --build-arg GO_IMAGE=registry.example.com/native-go:1.25 \
+  --build-arg RUNTIME_IMAGE=registry.example.com/native-python:3.13 \
+  -f dashboard/backend/Dockerfile -t dashboard:local --load .
+```
+
+The Go backend needs a Debian-compatible builder and native C compiler for
+SQLite. The frontend input must supply Node and npm; the runtime input must
+supply Python with `venv` and Debian-compatible package management. The WASM
+builder accepts Alpine or Debian-compatible package management when Git is
+not already installed. `GOPROXY` is also configurable. Pin input image digests
+for reproducible builds; overriding an image does not make arbitrary base
+distributions compatible. These inputs do not change runtime permissions.
+
 ```bash
 make dashboard-build
 make dashboard-check

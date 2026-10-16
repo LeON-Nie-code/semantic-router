@@ -1,12 +1,24 @@
 ARG IMAGE_REGISTRY=docker.io/
 ARG VLLM_SR_SOURCE_REVISION=unavailable
+ARG WASM_GO_IMAGE=${IMAGE_REGISTRY}library/golang:1.25-alpine
+ARG FRONTEND_IMAGE=${IMAGE_REGISTRY}library/node:20-alpine
+ARG GO_IMAGE=${IMAGE_REGISTRY}library/golang:1.25-bookworm
+ARG RUNTIME_IMAGE=${IMAGE_REGISTRY}library/python:3.11-slim-bookworm
 # Stage 0: Build DSL compiler WASM assets
-FROM ${IMAGE_REGISTRY}library/golang:1.25-alpine AS wasm-builder
+FROM --platform=$BUILDPLATFORM ${WASM_GO_IMAGE} AS wasm-builder
 WORKDIR /app/src/semantic-router
 
-RUN apk add --no-cache git
+RUN if ! command -v git >/dev/null 2>&1; then \
+      if command -v apk >/dev/null 2>&1; then \
+        apk add --no-cache git; \
+      else \
+        apt-get update && apt-get install -y --no-install-recommends git && \
+          rm -rf /var/lib/apt/lists/*; \
+      fi; \
+    fi
 # Pipe falls back to direct on any proxy error; comma only on 404 and 410
-ENV GOPROXY="https://proxy.golang.org|direct"
+ARG GOPROXY="https://proxy.golang.org|direct"
+ENV GOPROXY=${GOPROXY}
 
 COPY src/semantic-router/go.mod src/semantic-router/go.sum ./
 COPY src/semantic-router/ ./
@@ -25,7 +37,7 @@ RUN CGO_ENABLED=0 GOOS=js GOARCH=wasm go build \
     fi
 
 # Stage 1: Build frontend with Node.js
-FROM --platform=$BUILDPLATFORM ${IMAGE_REGISTRY}library/node:20-alpine AS frontend-builder
+FROM --platform=$BUILDPLATFORM ${FRONTEND_IMAGE} AS frontend-builder
 WORKDIR /workspace/dashboard/frontend
 COPY dashboard/frontend/package.json dashboard/frontend/package-lock.json dashboard/frontend/tsconfig.json dashboard/frontend/tsconfig.node.json dashboard/frontend/vite.config.ts ./
 COPY dashboard/frontend/src ./src
@@ -40,12 +52,13 @@ RUN npm config set registry https://registry.npmjs.org/ && \
 RUN npm run build
 
 # Stage 2: Build backend with Go
-FROM ${IMAGE_REGISTRY}library/golang:1.25-bookworm AS backend-builder
+FROM ${GO_IMAGE} AS backend-builder
 WORKDIR /app
 
 # Use Go proxy for reliable downloads
 # Pipe falls back to direct on any proxy error; comma only on 404 and 410
-ENV GOPROXY="https://proxy.golang.org|direct"
+ARG GOPROXY="https://proxy.golang.org|direct"
+ENV GOPROXY=${GOPROXY}
 
 # Use BuildKit-provided target platform arguments
 ARG TARGETARCH
@@ -110,7 +123,7 @@ RUN PROJECT_VERSION="$(sed -n 's/^version = "\(.*\)"/\1/p' /app/src/vllm-sr/pypr
       -o /app/dashboard-backend main.go
 
 # Stage 3: Final runtime image
-FROM ${IMAGE_REGISTRY}library/python:3.11-slim-bookworm
+FROM ${RUNTIME_IMAGE}
 ARG VLLM_SR_SOURCE_REVISION
 ENV PYTHONPATH=/app
 ENV VIRTUAL_ENV=/opt/vllm-sr-dashboard-venv

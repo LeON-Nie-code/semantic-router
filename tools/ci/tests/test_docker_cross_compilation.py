@@ -23,6 +23,59 @@ def router_build_command() -> str:
 
 
 class DockerCrossCompilationTests(unittest.TestCase):
+    def test_operator_installs_runtime_requirements_with_debian_package_manager(
+        self,
+    ) -> None:
+        text = (
+            (REPO_ROOT / "deploy/operator/Dockerfile").read_text().replace("\\\n", " ")
+        )
+        stage = text.rsplit("\nFROM ", 1)[1]
+        command = re.search(r"(?m)^RUN (.+)$", stage).group(1)
+        with tempfile.TemporaryDirectory() as tmp:
+            stubs = Path(tmp)
+            (stubs / "apt-get").write_text('#!/bin/sh\nprintf "%s\\n" "$*"\n')
+            (stubs / "rm").write_text("#!/bin/sh\nexit 0\n")
+            for stub in stubs.iterdir():
+                stub.chmod(0o755)
+            result = subprocess.run(
+                ["/bin/sh", "-ec", command],
+                env=os.environ | {"PATH": str(stubs)},
+                capture_output=True,
+                text=True,
+                check=False,
+            )
+            self.assertEqual(result.returncode, 0, result.stderr)
+            self.assertEqual(
+                result.stdout.splitlines(),
+                ["update", "install -y --no-install-recommends ca-certificates passwd"],
+            )
+
+    def test_dashboard_wasm_keeps_an_existing_git_without_running_a_package_manager(
+        self,
+    ) -> None:
+        text = (
+            (REPO_ROOT / "dashboard/backend/Dockerfile")
+            .read_text()
+            .replace("\\\n", " ")
+        )
+        stage = text.split(" AS wasm-builder", 1)[1].split("\nFROM ", 1)[0]
+        command = re.search(r"(?m)^RUN (.+)$", stage).group(1)
+        with tempfile.TemporaryDirectory() as tmp:
+            stubs = Path(tmp)
+            (stubs / "git").write_text("#!/bin/sh\nexit 0\n")
+            for name in ("apk", "apt-get"):
+                (stubs / name).write_text("#!/bin/sh\nexit 91\n")
+            for stub in stubs.iterdir():
+                stub.chmod(0o755)
+            result = subprocess.run(
+                ["/bin/sh", "-ec", command],
+                env=os.environ | {"PATH": str(stubs)},
+                capture_output=True,
+                text=True,
+                check=False,
+            )
+            self.assertEqual(result.returncode, 0, result.stderr)
+
     def test_router_cross_compiles_arm64_with_only_the_target_c_linker(self) -> None:
         command = router_build_command()
         with tempfile.TemporaryDirectory() as tmp:

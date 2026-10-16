@@ -31,17 +31,19 @@ BUILT_IN_MODEL_ASSETS = (
 def test_dashboard_dockerfile_uses_glibc_builder_for_cgo_backend() -> None:
     content = DASHBOARD_DOCKERFILE.read_text(encoding="utf-8")
 
-    assert (
-        "FROM ${IMAGE_REGISTRY}library/golang:1.25-bookworm AS backend-builder"
-        in content
-    )
+    assert "ARG GO_IMAGE=${IMAGE_REGISTRY}library/golang:1.25-bookworm" in content
+    assert "FROM ${GO_IMAGE} AS backend-builder" in content
     assert "apt_get_install_with_retry build-essential" in content
 
 
 def test_dashboard_dockerfile_retries_runtime_apk_installs() -> None:
     content = DASHBOARD_DOCKERFILE.read_text(encoding="utf-8")
 
-    assert "FROM ${IMAGE_REGISTRY}library/python:3.11-slim-bookworm" in content
+    assert (
+        "ARG RUNTIME_IMAGE=${IMAGE_REGISTRY}library/python:3.11-slim-bookworm"
+        in content
+    )
+    assert "FROM ${RUNTIME_IMAGE}" in content
     assert (
         "apt_get_install_with_retry ca-certificates curl git gosu libseccomp2 wget"
         in content

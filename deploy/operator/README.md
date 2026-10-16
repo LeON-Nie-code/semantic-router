@@ -40,6 +40,26 @@ kubectl get deployments --all-namespaces \
 kubectl explain semanticrouter.spec
 ```
 
+### Native image builds
+
+The Dockerfile accepts `GO_IMAGE`, `RUNTIME_IMAGE`, and `GOPROXY` build
+arguments. UBI 10 remains the default. A Debian-compatible runtime is also
+supported for architectures without UBI images; it installs the system CA
+certificates and user-management tools and retains the non-root UID 65532.
+The builder needs Go matching `go.mod`. BuildKit supplies `TARGETARCH`.
+
+```bash
+docker buildx build --platform linux/riscv64 \
+  --build-arg GO_IMAGE=registry.example.com/native-go:1.25 \
+  --build-arg RUNTIME_IMAGE=docker.io/library/debian:trixie-slim \
+  -f deploy/operator/Dockerfile -t semantic-router-operator:local --load .
+```
+
+Run this command from the repository root. Use a native RISC-V worker for
+the runtime package-install steps, and pin the base image digests for
+reproducibility. The controller image architecture is independent of the
+Router image selected in a `SemanticRouter` resource.
+
 ## Choose a sample
 
 The samples are executable CRs, not drop-in production values. Review image
