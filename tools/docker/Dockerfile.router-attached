@@ -1,0 +1,97 @@
+# Router with externally managed model inference. No PyTorch or vllm-srun.
+# The bundled-runtime Dockerfile.extproc remains the default image.
+ARG GO_IMAGE=golang:1.25-bookworm
+ARG RUST_IMAGE=rust:1.90-slim-bookworm
+ARG BASE_IMAGE=debian:trixie-slim
+ARG TARGETARCH
+
+FROM --platform=$BUILDPLATFORM ${RUST_IMAGE} AS glide-riscv64
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    protobuf-compiler cmake pkg-config make curl ca-certificates git \
+    && if [ "$(dpkg --print-architecture)" != riscv64 ]; then \
+      apt-get install -y --no-install-recommends \
+        gcc-riscv64-linux-gnu g++-riscv64-linux-gnu libc6-dev-riscv64-cross; \
+    fi \
+    && rm -rf /var/lib/apt/lists/*
+RUN if [ ! -d "$(rustc --print target-libdir --target riscv64gc-unknown-linux-gnu)" ]; then \
+      rustup target add riscv64gc-unknown-linux-gnu; \
+    fi
+WORKDIR /source
+COPY src/semantic-router/go.mod src/semantic-router/go.mod
+COPY tools/docker/build-valkey-glide-riscv64.sh tools/docker/build-valkey-glide-riscv64.sh
+COPY tools/docker/valkey-glide/ tools/docker/valkey-glide/
+RUN bash tools/docker/build-valkey-glide-riscv64.sh --output /out/glide
+
+FROM --platform=$BUILDPLATFORM ${GO_IMAGE} AS router-source
+WORKDIR /source/src/semantic-router
+ARG GOPROXY="https://proxy.golang.org|direct"
+ENV GOPROXY=${GOPROXY}
+COPY src/semantic-router/go.mod src/semantic-router/go.sum ./
+RUN go mod download
+COPY src/semantic-router/ ./
+
+FROM router-source AS router-build-amd64
+RUN if [ "$(dpkg --print-architecture)" != amd64 ]; then \
+      apt-get update && apt-get install -y --no-install-recommends gcc-x86-64-linux-gnu libc6-dev-amd64-cross \
+      && rm -rf /var/lib/apt/lists/*; export CC=x86_64-linux-gnu-gcc; \
+    fi; \
+    CGO_ENABLED=1 GOOS=linux GOARCH=amd64 \
+      go build -trimpath -buildvcs=false -ldflags="-s -w" -o /out/router ./cmd
+
+FROM router-source AS router-build-arm64
+RUN if [ "$(dpkg --print-architecture)" != arm64 ]; then \
+      apt-get update && apt-get install -y --no-install-recommends gcc-aarch64-linux-gnu libc6-dev-arm64-cross \
+      && rm -rf /var/lib/apt/lists/*; export CC=aarch64-linux-gnu-gcc; \
+    fi; \
+    CGO_ENABLED=1 GOOS=linux GOARCH=arm64 \
+      go build -trimpath -buildvcs=false -ldflags="-s -w" -o /out/router ./cmd
+
+FROM router-source AS router-build-riscv64
+COPY --from=glide-riscv64 /out/glide/ /out/glide/
+RUN if [ "$(dpkg --print-architecture)" != riscv64 ]; then \
+      apt-get update && apt-get install -y --no-install-recommends \
+        gcc-riscv64-linux-gnu libc6-dev-riscv64-cross \
+        && rm -rf /var/lib/apt/lists/*; export CC=riscv64-linux-gnu-gcc; \
+    fi; \
+    CGO_ENABLED=1 GOOS=linux GOARCH=riscv64 CC="${CC:-gcc}" \
+    go build -trimpath -buildvcs=false -ldflags="-s -w -extldflags=-L/out/glide" -o /out/router ./cmd
+
+FROM router-build-${TARGETARCH} AS router-build
+
+# Export only the target executable when qualifying cross builds separately.
+FROM scratch AS router-binary
+COPY --from=router-build /out/router /router
+
+FROM --platform=$BUILDPLATFORM ${GO_IMAGE} AS image-routing-assets
+RUN apt-get update && apt-get install -y --no-install-recommends python3 \
+    && rm -rf /var/lib/apt/lists/*
+WORKDIR /source
+COPY tools/calibration/image-routing/prepare_assets.py tools/calibration/image-routing/prepare_assets.py
+COPY config/assets/image-routing/manifest.json config/assets/image-routing/manifest.json
+COPY website/static/img/ website/static/img/
+COPY dashboard/frontend/public/ dashboard/frontend/public/
+RUN python3 tools/calibration/image-routing/prepare_assets.py --repository-root /source --output /out
+
+FROM ${BASE_IMAGE} AS router-attached
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    bash busybox ca-certificates curl python3 python3-yaml libgcc-s1 \
+    && rm -rf /var/lib/apt/lists/* \
+    && ln -s /bin/busybox /usr/local/bin/mkfifo \
+    && useradd --uid 65532 --no-create-home --shell /usr/sbin/nologin vllm-sr \
+    && mkdir -p /app/config /app/models
+WORKDIR /app
+# The CLI log wrapper starts as root; Kubernetes explicitly sets its non-root UID.
+ENV USER=vllm-sr
+LABEL io.vllm.semantic-router.model-runtime="attached"
+COPY --from=image-routing-assets /out/ /app/share/image-routing/
+COPY config/knowledge_bases/ /app/config/knowledge_bases/
+COPY config/config.yaml /app/config/config.yaml
+COPY src/vllm-sr/cli/ /app/cli/
+COPY src/semantic-router/pkg/configschema/router-config-v0.3.schema.json /app/cli/config_schema/router-config-v0.3.schema.json
+COPY config/recipes/built-in/ /app/cli/model_assets/
+COPY config/fragments/algorithm/selection/latency-aware.yaml /app/cli/proposal_assets/fragments/algorithm/selection/latency-aware.yaml
+COPY --chmod=0755 src/vllm-sr/start-router.sh /app/start-router.sh
+COPY --from=router-build /out/router /usr/local/bin/router
+EXPOSE 8801 50051 8080 9190
+VOLUME ["/app/models"]
+ENTRYPOINT ["/app/start-router.sh"]

@@ -760,6 +760,27 @@ images:
   operator:
     pr_paths: [deploy/operator/Dockerfile*]
     publish_paths: [deploy/operator/**]
+  operator-portable:
+    pr_paths: [deploy/operator/Dockerfile.portable]
+    publish_paths:
+      - deploy/operator/**
+      - src/semantic-router/**
+      - .dockerignore
+  router-attached:
+    pr_paths:
+      - tools/docker/Dockerfile.router-attached
+      - tools/docker/Dockerfile.riscv64-toolchain
+      - tools/docker/build-valkey-glide-riscv64.sh
+      - tools/docker/valkey-glide/**
+    publish_paths:
+      - tools/docker/Dockerfile.router-attached
+      - tools/docker/Dockerfile.riscv64-toolchain
+      - tools/docker/build-valkey-glide-riscv64.sh
+      - tools/docker/valkey-glide/**
+      - src/semantic-router/**
+      - src/vllm-sr/**
+      - config/**
+      - .dockerignore
   operator-bundle:
     pr_paths: [deploy/operator/bundle.Dockerfile]
     publish_paths: [deploy/operator/**]

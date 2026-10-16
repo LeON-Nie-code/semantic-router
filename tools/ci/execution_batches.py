@@ -11,9 +11,10 @@ MAX_CONTRACT_MINUTES = 330
 IMAGE_PRODUCERS = {
     "image-router": ("vllm-sr",),
     "image-dashboard": ("dashboard",),
-    "image-operator": ("operator", "operator-bundle"),
+    "image-operator": ("operator", "operator-bundle", "operator-portable"),
     "image-fixtures": ("provider-mocker", "model-runtime"),
     "image-distribution": (
+        "router-attached",
         "vllm-sr-cuda",
         "vllm-sr-rocm",
     ),

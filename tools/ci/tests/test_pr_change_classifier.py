@@ -35,6 +35,23 @@ MODELS = "platform.models-cpu"
 
 
 class SelectionTests(unittest.TestCase):
+    def test_portable_images_have_build_and_publication_ownership(self):
+        for path, name in (
+            ("tools/docker/Dockerfile.router-attached", "router-attached"),
+            ("deploy/operator/Dockerfile.portable", "operator-portable"),
+        ):
+            with self.subTest(image=name):
+                selection = classify([path])
+                self.assertIn(name, selection.pr_images)
+                self.assertIn(name, selection.publish_images)
+                plan = make_plan([path], source_sha=SHA, profile="main")
+                self.assertTrue(
+                    any(
+                        name in produced
+                        for produced in plan["image_producers"].values()
+                    )
+                )
+
     def test_no_route_contract_keeps_an_isolated_required_gateway_profile(self):
         for path in (
             "e2e/profiles/routing-errors/values.yaml",

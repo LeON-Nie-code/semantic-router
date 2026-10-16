@@ -29,7 +29,8 @@ func TestDashboardContainerUsesOneCatalogCapableRuntime(t *testing.T) {
 		}
 	}
 	for _, required := range []string{
-		"FROM ${IMAGE_REGISTRY}library/python:3.11-slim-bookworm",
+		"ARG RUNTIME_IMAGE=${IMAGE_REGISTRY}library/python:3.11-slim-bookworm",
+		"FROM ${RUNTIME_IMAGE}",
 		"ENV PYTHONPATH=/app",
 		"COPY src/semantic-router/pkg/catalog/ /app/src/semantic-router/pkg/catalog/",
 		"COPY src/vllm-sr/requirements.txt /app/requirements.txt",

@@ -16,14 +16,17 @@ from pathlib import Path
 import provider_mocker_image as mocker
 
 DUAL = ["linux/amd64", "linux/arm64"]
+PORTABLE = [*DUAL, "linux/riscv64"]
 ROUTER_DOCKERFILE = "tools/docker/Dockerfile.extproc"
 DEFINITIONS = {
     "dashboard": (".", "dashboard/backend/Dockerfile", DUAL),
     mocker.IMAGE: (mocker.CONTEXT, mocker.CONTEXT + "/Dockerfile", DUAL),
     "model-runtime": ("src/model-runtime", "src/model-runtime/Dockerfile", DUAL),
     "operator": (".", "deploy/operator/Dockerfile", DUAL),
+    "operator-portable": (".", "deploy/operator/Dockerfile.portable", PORTABLE),
     "operator-bundle": ("deploy/operator", "deploy/operator/bundle/Dockerfile", DUAL),
     "vllm-sr": (".", ROUTER_DOCKERFILE, DUAL),
+    "router-attached": (".", "tools/docker/Dockerfile.router-attached", PORTABLE),
     "vllm-sr-cuda": (".", ROUTER_DOCKERFILE, ["linux/amd64"]),
     "vllm-sr-rocm": (".", ROUTER_DOCKERFILE, ["linux/amd64"]),
 }

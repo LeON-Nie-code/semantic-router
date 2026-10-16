@@ -3,6 +3,7 @@ import hashlib
 import io
 import json
 import os
+import subprocess
 import sys
 import tarfile
 import tempfile
@@ -43,6 +44,40 @@ def archive_image(path, architectures=("amd64",)):
 
 
 class ImageArtifactTests(unittest.TestCase):
+    def test_attached_and_portable_definitions_include_riscv_without_torch(self):
+        for image, dockerfile, target in (
+            ("router-attached", "tools/docker/Dockerfile.router-attached", ""),
+            ("operator-portable", "deploy/operator/Dockerfile.portable", ""),
+        ):
+            with self.subTest(image=image), tempfile.TemporaryDirectory() as tmp:
+                output = Path(tmp) / "output"
+                result = subprocess.run(
+                    [
+                        sys.executable,
+                        str(Path(images.__file__)),
+                        "definition",
+                        "--image",
+                        image,
+                        "--multiarch",
+                    ],
+                    env={**os.environ, "GITHUB_OUTPUT": str(output)},
+                    capture_output=True,
+                    text=True,
+                    check=False,
+                )
+                self.assertEqual(result.returncode, 0, result.stderr)
+                fields = dict(
+                    line.split("=", 1)
+                    for line in output.read_text().splitlines()
+                    if "=" in line
+                )
+                self.assertEqual(
+                    fields["platforms"], "linux/amd64,linux/arm64,linux/riscv64"
+                )
+                self.assertEqual(fields["dockerfile"], dockerfile)
+                self.assertEqual(fields["target"], target)
+                self.assertEqual(fields["accelerator"], "")
+
     def test_multiarchitecture_inventory_is_actual_oci_config(self):
         with tempfile.TemporaryDirectory() as tmp:
             path = Path(tmp) / "image.tar"

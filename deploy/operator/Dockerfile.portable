@@ -1,0 +1,21 @@
+# Separate portable controller image; the existing UBI image is unchanged.
+# Build from the repository root with BuildKit/buildx.
+ARG GO_IMAGE=golang:1.25-bookworm
+FROM --platform=$BUILDPLATFORM ${GO_IMAGE} AS builder
+ARG TARGETARCH
+WORKDIR /workspace
+COPY deploy/operator/go.mod deploy/operator/go.sum deploy/operator/
+COPY src/semantic-router/go.mod src/semantic-router/go.sum src/semantic-router/
+WORKDIR /workspace/deploy/operator
+ENV GOPROXY="https://proxy.golang.org|direct"
+RUN go mod download -x
+COPY deploy/operator/ /workspace/deploy/operator/
+COPY src/semantic-router/ /workspace/src/semantic-router/
+RUN CGO_ENABLED=0 GOOS=linux GOARCH=${TARGETARCH} \
+    go build -trimpath -buildvcs=false -ldflags="-s -w" -o /out/manager .
+
+FROM scratch
+COPY --from=builder /etc/ssl/certs/ca-certificates.crt /etc/ssl/certs/ca-certificates.crt
+COPY --from=builder /out/manager /manager
+USER 65532:0
+ENTRYPOINT ["/manager"]
