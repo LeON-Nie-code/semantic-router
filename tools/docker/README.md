@@ -74,6 +74,11 @@ External classification and external LLM generation are separate endpoints.
 
 ### RISC-V build inputs
 
+The [public native build flow](riscv64/README.md) builds a clean SDK from
+checksummed Go/Rust release archives and a digest-pinned Debian image, then
+builds the standalone Router without importing local compilation caches. It
+also provides a CLI lifecycle and buffered/SSE smoke test with no model weights.
+
 RISC-V uses the real source-built GLIDE FFI; see
 [the dependency build instructions](valkey-glide/README.md). The `router-binary`
 target exports only the executable and can be cross-compiled without executing
