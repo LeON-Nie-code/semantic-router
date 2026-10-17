@@ -71,6 +71,113 @@ Do not commit proxy credentials or machine-specific environment files.
 For an empty-cache qualification, use a separate disposable builder/daemon or
 an otherwise clean environment; do not prune a shared machine's Docker state.
 
+## Run against a real inference backend
+
+This minimal deployment runs only the standalone Router on RISC-V. It forwards
+OpenAI-compatible chat requests to one existing backend; it does not start Envoy,
+Dashboard, a knowledge base, or a local classifier. The fallback decision routes
+all requests to that backend. Add routing signals separately after verifying this
+path. The commands below are Bash commands run from the repository root.
+
+First build `semantic-router-router:public` using the preceding section.
+Use the same Docker daemon and user for every
+command; Docker access may require administrator privileges. Do not switch users
+midway through a deployment or mix privileged and unprivileged state directories.
+
+Create a persistent directory outside the checkout, install the CLI and copy the
+example. Source-built dependencies need a host C compiler and Python development
+headers. If your Python version also requires a Rust dependency build, export the
+SDK's release toolchain as shown in the qualification section below.
+
+```bash
+export VSR_DEPLOY_DIR="$HOME/.local/share/vsr-riscv"
+mkdir -p "$VSR_DEPLOY_DIR"
+chmod 700 "$VSR_DEPLOY_DIR"
+python3 -m venv "$VSR_DEPLOY_DIR/cli" &&
+"$VSR_DEPLOY_DIR/cli/bin/python" -m pip install --index-url https://pypi.org/simple \
+  --no-cache-dir --upgrade pip==26.2.1 &&
+"$VSR_DEPLOY_DIR/cli/bin/python" -m pip install --index-url https://pypi.org/simple \
+  --no-cache-dir ./src/vllm-sr
+source "$VSR_DEPLOY_DIR/cli/bin/activate"
+cp -i tools/docker/riscv64/standalone.yaml "$VSR_DEPLOY_DIR/config.yaml"
+```
+
+Edit `providers.models[0].provider_model_id` to the exact ID served by your
+backend, and `backend_refs[0].base_url` to its API base URL, including `/v1` when
+required. The example host and model ID are placeholders. The address must be
+reachable **from the Docker container**: `localhost` means the Router container,
+not the host or another machine. Supply a reachable host address or DNS name.
+For HTTPS, use a certificate trusted by the Router image. The
+`openai_compat_gateway` option accepts OpenAI-compatible backend response
+extensions, including llama.cpp's extra timing fields.
+
+If the backend requires a bearer API key, enter it without putting it in shell
+history, the YAML file, or an argument:
+
+```bash
+read -rsp 'Backend API key: ' VSR_BACKEND_API_KEY; echo
+export VSR_BACKEND_API_KEY
+```
+
+Leave `VSR_BACKEND_API_KEY` unset for an unauthenticated backend. The config
+stores only the environment variable name. Docker administrators can still read
+container environment values; this is not a secret vault. Re-export the key when
+recreating the container. URL and model ID are ordinary configuration values and
+are stored in the runtime configuration.
+
+Check and start:
+
+```bash
+export VLLM_SR_STACK_NAME=riscv-standalone
+export VLLM_SR_STATE_ROOT_DIR="$VSR_DEPLOY_DIR"
+export VLLM_SR_PORT_OFFSET=0
+python tools/docker/riscv64/preflight.py --config "$VSR_DEPLOY_DIR/config.yaml" &&
+vllm-sr config validate --offline --config "$VSR_DEPLOY_DIR/config.yaml" &&
+vllm-sr serve --config "$VSR_DEPLOY_DIR/config.yaml" \
+  --platform cpu --gateway standalone --minimal \
+  --router-image semantic-router-router:public --image-pull-policy never \
+  --restart-policy unless-stopped
+vllm-sr status router
+curl --fail --max-time 10 http://127.0.0.1:8899/ready
+```
+
+Preflight is read-only: it checks backend address syntax, native host/daemon
+architecture and the selected local image. It does not pull images, download
+models, change the host, or test backend reachability/authentication. Offline CLI
+validation checks the configuration; readiness confirms Router startup. Neither
+replaces a successful generation request:
+
+```bash
+curl --fail-with-body --max-time 120 http://127.0.0.1:8899/v1/chat/completions \
+  -H 'Content-Type: application/json' \
+  -d '{"model":"vllm-sr/auto","messages":[{"role":"user","content":"Say hello in one short sentence."}],"max_tokens":64,"stream":false}'
+curl --fail-with-body --no-buffer --max-time 120 \
+  http://127.0.0.1:8899/v1/chat/completions \
+  -H 'Content-Type: application/json' \
+  -d '{"model":"vllm-sr/auto","messages":[{"role":"user","content":"What is 2 plus 2?"}],"max_tokens":64,"stream":true}'
+```
+
+Check generated content in the first response and `data:` events ending in
+`[DONE]` in the second. Backend errors require checking its URL, model ID,
+credentials and container network access. Inspect Router logs with
+`vllm-sr logs router`; add `--follow` to stream them.
+
+The service runs detached. `unless-stopped` restarts the container after a crash
+or host reboot when Docker itself starts. It does not recreate deleted containers
+or supervise an external model service. Keep the deployment directory and record
+the image ID with `docker image inspect semantic-router-router:public --format
+'{{.Id}}'`. To stop the stack, run `vllm-sr stop`; to recreate it, run the same
+`serve` command again. In a new shell, restore the three `VLLM_SR_*` variables,
+`VSR_DEPLOY_DIR`, CLI environment and Docker connection, plus the backend key if
+needed. Do not copy the example over an existing edited config when restarting.
+
+The listener binds to host loopback by default. Use an SSH tunnel for remote
+access, or add appropriate client authentication, TLS and firewall restrictions
+before exposing it. A backend API key authenticates the Router to the backend;
+it does not authenticate callers to the Router. If host ports are occupied,
+choose another `VLLM_SR_PORT_OFFSET` and add it to port 8899 in the curl commands;
+the offset also applies to the stack's management and metrics ports.
+
 ## Automated standalone qualification
 
 Use fresh environments rather than an existing CLI or provider installation:
