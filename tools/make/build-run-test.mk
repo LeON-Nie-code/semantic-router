@@ -4,6 +4,13 @@
 
 ##@ Build/Test
 
+# Optional source fallback for architectures missing GLIDE's module archive.
+GLIDE_OUTPUT_DIR ?= $(CURDIR)/.agent-harness/native/glide
+GLIDE_SOURCE_ARCHIVE ?=
+ROUTER_LDFLAGS ?=
+build-glide: ## Build the pinned RISC-V GLIDE FFI (native or cross toolchain)
+	@bash tools/docker/build-glide.sh --output "$(GLIDE_OUTPUT_DIR)" $(if $(GLIDE_SOURCE_ARCHIVE),--archive "$(GLIDE_SOURCE_ARCHIVE)")
+
 # Build the router binary. Models run in the model runtime the router starts
 # (vllm-srun on PATH, or VLLM_SRUN_COMMAND); see src/model-runtime.
 build: ## Build the router binary
@@ -16,9 +23,9 @@ build-router: ## Build the router binary
 	@$(LOG_TARGET)
 	@mkdir -p bin
 ifdef DEV
-	@cd src/semantic-router && go build -tags=dev -o ../../bin/router ./cmd
+	@cd src/semantic-router && go build -tags=dev $(if $(strip $(ROUTER_LDFLAGS)),-ldflags="$(ROUTER_LDFLAGS)") -o ../../bin/router ./cmd
 else
-	@cd src/semantic-router && go build -o ../../bin/router ./cmd
+	@cd src/semantic-router && go build $(if $(strip $(ROUTER_LDFLAGS)),-ldflags="$(ROUTER_LDFLAGS)") -o ../../bin/router ./cmd
 endif
 
 # Run the router
