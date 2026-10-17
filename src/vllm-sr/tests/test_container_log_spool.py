@@ -2,6 +2,7 @@ import json
 import os
 import select
 import selectors
+import shlex
 import shutil
 import signal
 import stat
@@ -87,6 +88,35 @@ def test_bounded_log_spool_entrypoint_uses_fixed_limits_and_path():
     ]
     assert args[4:6] == [str(LOG_SPOOL_MAX_BYTES), str(LOG_SPOOL_MAX_LINE_BYTES)]
     assert args[-3:] == ["--", "/service", "--flag"]
+
+
+def test_fifo_creation_avoids_post_creation_chmod_and_remains_private(tmp_path):
+    real_mkfifo = shutil.which("mkfifo")
+    assert real_mkfifo
+    tools = tmp_path / "tools"
+    tools.mkdir()
+    wrapper = tools / "mkfifo"
+    wrapper.write_text(
+        '#!/bin/sh\nif [ "$1" = "-m" ]; then echo "blocked chmod syscall" >&2; exit 1; fi\n'
+        f'exec {shlex.quote(real_mkfifo)} "$@"\n'
+    )
+    wrapper.chmod(0o755)
+    service = (
+        "import pathlib,stat,sys; "
+        "fifo=next(pathlib.Path(sys.argv[1]).glob('vllm-sr-log-spool.*/output.fifo')); "
+        "print(stat.S_IMODE(fifo.stat().st_mode))"
+    )
+    result = subprocess.run(
+        _spool_command(tmp_path, sys.executable, "-c", service, str(tmp_path)),
+        env={**os.environ, "PATH": str(tools) + os.pathsep + os.environ["PATH"]},
+        capture_output=True,
+        text=True,
+        check=False,
+        timeout=10,
+    )
+    assert result.returncode == 0, result.stderr
+    assert result.stdout.strip() == str(0o600)
+    assert not list(tmp_path.glob("vllm-sr-log-spool.*"))
 
 
 def test_bounded_log_spool_relay_preserves_output_and_bounds_file(tmp_path):
