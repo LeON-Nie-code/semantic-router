@@ -23,21 +23,33 @@ def router_build_command() -> str:
 
 
 class DockerCrossCompilationTests(unittest.TestCase):
-    def test_router_cross_compiles_arm64_with_only_the_target_c_linker(self) -> None:
+    def test_router_build_uses_only_the_required_target_c_linker(self) -> None:
         command = router_build_command()
         with tempfile.TemporaryDirectory() as tmp:
             stubs = Path(tmp)
-            (stubs / "dpkg").write_text("#!/bin/sh\necho amd64\n")
+            (stubs / "dpkg").write_text('#!/bin/sh\necho "$BUILD_HOST_ARCH"\n')
             (stubs / "go").write_text(
                 '#!/bin/sh\necho "CC=${CC:-} GOARCH=$GOARCH CGO_ENABLED=$CGO_ENABLED"\n'
+                'if [ "$GOARCH" = riscv64 ]; then printf "%s\\n" "$@"; fi\n'
             )
             for stub in stubs.iterdir():
                 stub.chmod(0o755)
-            for arch, linker in (("arm64", "aarch64-linux-gnu-gcc"), ("amd64", "")):
-                with self.subTest(arch=arch):
+            for arch, host, linker in (
+                ("arm64", "amd64", "aarch64-linux-gnu-gcc"),
+                ("amd64", "amd64", ""),
+                ("riscv64", "amd64", "riscv64-linux-gnu-gcc"),
+                ("riscv64", "arm64", "riscv64-linux-gnu-gcc"),
+                ("riscv64", "riscv64", ""),
+                ("arm64", "arm64", ""),
+            ):
+                with self.subTest(arch=arch, host=host):
                     environment = {
                         key: value for key, value in os.environ.items() if key != "CC"
-                    } | {"PATH": f"{stubs}:{os.environ['PATH']}", "TARGETARCH": arch}
+                    } | {
+                        "PATH": f"{stubs}:{os.environ['PATH']}",
+                        "TARGETARCH": arch,
+                        "BUILD_HOST_ARCH": host,
+                    }
                     result = subprocess.run(
                         ["bash", "-e", "-c", command],
                         env=environment,
@@ -46,9 +58,11 @@ class DockerCrossCompilationTests(unittest.TestCase):
                         text=True,
                     )
                     self.assertEqual(
-                        result.stdout.strip(),
+                        result.stdout.splitlines()[0],
                         f"CC={linker} GOARCH={arch} CGO_ENABLED=1",
                     )
+                    if arch == "riscv64":
+                        self.assertIn("-extldflags=-L/out/glide", result.stdout)
 
     def test_router_images_share_one_dockerfile_and_publish_their_platforms(
         self,
