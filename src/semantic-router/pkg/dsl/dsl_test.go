@@ -1729,13 +1729,13 @@ func TestCompileAllPluginTypes(t *testing.T) {
 		{
 			name:       "shadow_dispatch",
 			pluginType: "shadow_dispatch",
-			body:       `enabled: true model: "candidate" sample_rate: 0.1 max_concurrency: 2 timeout_seconds: 20 forward_headers: ["x-tenant"]`,
+			body:       `enabled: true models: ["candidate"] sample_rate: 0.1 execution: {max_concurrency: 2 timeout: "20s"}`,
 			verifyType: "shadow_dispatch",
 		},
 		{
 			name:       "shadow_dispatch_hyphen_alias",
 			pluginType: "shadow-dispatch",
-			body:       `enabled: true model: "candidate"`,
+			body:       `enabled: true models: ["candidate"]`,
 			verifyType: "shadow_dispatch",
 		},
 		{

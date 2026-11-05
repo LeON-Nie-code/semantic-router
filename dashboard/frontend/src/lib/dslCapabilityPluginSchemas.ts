@@ -28,29 +28,91 @@ const additionalCapabilityPluginFields = new Map<string, FieldSchema[]>([
 // structure ratchet live in this table so that function never grows.
 const CAPABILITY_PLUGIN_FIELD_SCHEMAS: Record<string, FieldSchema[]> = {
   shadow_dispatch: [
-    { key: 'enabled', label: 'Enabled', type: 'boolean' },
-    { key: 'model', label: 'Shadow Model', type: 'string', placeholder: 'candidate-model' },
-    { key: 'sample_rate', label: 'Sample Rate', type: 'number', placeholder: '0.05' },
-    { key: 'max_concurrency', label: 'Max Concurrency', type: 'number', placeholder: '2' },
-    { key: 'max_queue_depth', label: 'Max Queue Depth', type: 'number', placeholder: '8' },
-    { key: 'timeout_seconds', label: 'Timeout Seconds', type: 'number', placeholder: '30' },
+    { key: 'enabled', label: 'Enabled', type: 'boolean', description: 'Default: false' },
     {
-      key: 'max_response_bytes',
-      label: 'Max Response Bytes',
-      type: 'number',
-      placeholder: '1048576',
-    },
-    { key: 'max_retries', label: 'Max Retries', type: 'number', placeholder: '0' },
-    { key: 'capture_response_body', label: 'Capture Response Body', type: 'boolean' },
-    { key: 'max_capture_bytes', label: 'Max Capture Bytes', type: 'number', placeholder: '4096' },
-    { key: 'tls_skip_verify', label: 'Skip TLS Verification', type: 'boolean' },
-    {
-      key: 'forward_headers',
-      label: 'Forwarded Decision Headers',
+      key: 'models',
+      label: 'Shadow Models',
       type: 'string[]',
-      placeholder: 'x-tenant',
-      description:
-        'Decision header mutations the shadow copy may carry; credential headers are never forwarded',
+      placeholder: 'candidate-model',
+      description: 'Up to 8 model names; trimmed, nonempty and unique. At least one when enabled.',
+    },
+    {
+      key: 'sample_rate',
+      label: 'Sample Rate',
+      type: 'number',
+      min: 0,
+      max: 1,
+      placeholder: '1',
+      description: 'Finite value from 0 to 1; omitted or null defaults to 1.',
+    },
+    {
+      key: 'execution',
+      label: 'Execution',
+      type: 'object',
+      fields: [
+        {
+          key: 'max_concurrency',
+          label: 'Max Concurrency',
+          type: 'number',
+          min: 1,
+          placeholder: '2',
+          description: 'Positive integer; omitted or null defaults to 2.',
+        },
+        {
+          key: 'max_queue_size',
+          label: 'Max Queue Size',
+          type: 'number',
+          min: 1,
+          placeholder: '8',
+          description: 'Positive integer; omitted or null defaults to 8.',
+        },
+        {
+          key: 'timeout',
+          label: 'Timeout',
+          type: 'string',
+          placeholder: '30s',
+          description:
+            'Go duration using ms, s, m combinations (e.g. 1m30s); 1ns to 5m, at most 128 characters. Default: 30s.',
+        },
+      ],
+    },
+    {
+      key: 'budget',
+      label: 'Total Fanout Budget',
+      type: 'object',
+      fields: [
+        {
+          key: 'max_calls',
+          label: 'Max Calls',
+          type: 'number',
+          min: 1,
+          description:
+            'Positive integer, at least len(models); omitted or null defaults to len(models).',
+        },
+        {
+          key: 'max_response_bytes',
+          label: 'Max Response Bytes',
+          type: 'number',
+          min: 1,
+          description:
+            'Positive integer, at least 2 * len(models); omitted or null defaults to len(models) * 1048576 total bytes.',
+        },
+      ],
+    },
+    {
+      key: 'capture',
+      label: 'Response Capture',
+      type: 'object',
+      fields: [
+        { key: 'enabled', label: 'Enabled', type: 'boolean', description: 'Default: false' },
+        {
+          key: 'max_bytes',
+          label: 'Max Capture Bytes',
+          type: 'number',
+          min: 1,
+          description: 'Positive integer; omitted or null defaults to 4096 * max(1, len(models)).',
+        },
+      ],
     },
   ],
 }

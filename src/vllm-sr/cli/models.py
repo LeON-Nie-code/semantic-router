@@ -1436,87 +1436,124 @@ class RouterReplayPluginConfig(BaseModel):
     max_tool_trace_steps: Optional[int] = Field(default=None, ge=0)
 
 
-# Headers that carry a credential on the primary path. A shadow copy never
-# carries them and shadow_dispatch.forward_headers may not list them. Keep in
-# step with the Router's shadowCredentialHeaders in pkg/config.
-SHADOW_CREDENTIAL_HEADERS = frozenset(
-    {
-        "authorization",
-        "proxy-authorization",
-        "cookie",
-        "x-api-key",
-        "api-key",
-        "x-goog-api-key",
-        "x-user-openai-key",
-        "x-user-anthropic-key",
-        "x-user-azure-openai-key",
-        "x-user-bedrock-key",
-        "x-user-gemini-key",
-        "x-user-vertex-ai-key",
-        "x-user-minimax-key",
-    }
-)
-
-
-class ShadowDispatchPluginConfig(BaseModel):
-    """Configuration for shadow_dispatch plugin.
-
-    Sends a bounded, sampled copy of the approved request to a secondary
-    configured model after the primary dispatch is finalized. The primary
-    response never waits on or changes because of the shadow call.
-    """
+class ShadowDispatchExecutionConfig(BaseModel):
+    """Bounded execution; omitted numeric values use the Router defaults."""
 
     model_config = ConfigDict(extra="forbid")
 
-    # Required, matching the Go decoder: an omitted flag must not silently
-    # validate as enabled here and decode as disabled in the router.
-    enabled: bool
-    model: Optional[str] = Field(
-        default=None, description="Configured logical model receiving the shadow copy"
+    max_concurrency: Optional[int] = Field(
+        default=None, strict=True, gt=0, description="Default: 2"
     )
-    sample_rate: Optional[float] = Field(default=None, ge=0.0, le=1.0)
-    max_concurrency: int = Field(default=2, ge=0)
-    max_queue_depth: int = Field(default=8, ge=0)
-    timeout_seconds: int = Field(default=30, ge=0)
-    max_response_bytes: int = Field(default=1048576, ge=0)
-    max_retries: int = Field(default=0, ge=0, le=3)
-    capture_response_body: bool = False
-    max_capture_bytes: int = Field(default=4096, ge=0)
-    tls_skip_verify: bool = False
-    forward_headers: list[str] = Field(
-        default_factory=list,
-        description=(
-            "Decision header_mutation names the shadow copy may carry; nothing "
-            "else a decision sets for the primary backend is forwarded"
-        ),
+    max_queue_size: Optional[int] = Field(
+        default=None, strict=True, gt=0, description="Default: 8"
+    )
+    timeout: StrictStr = Field(
+        default="30s",
+        max_length=128,
+        description="Go duration using ms, s, m combinations; 1ns to 5m, default 30s",
     )
 
-    @field_validator("forward_headers")
+    @field_validator("timeout")
     @classmethod
-    def reject_credential_headers(cls, names: list[str]) -> list[str]:
-        # Mirrors the Router's validateShadowForwardHeaders so both admission
-        # paths refuse the same names.
-        for name in names:
-            stripped = name.strip()
-            if not stripped:
-                raise ValueError(
-                    "shadow_dispatch forward_headers entries cannot be empty"
-                )
-            if stripped.startswith(":"):
-                raise ValueError(
-                    f"shadow_dispatch forward_headers cannot include pseudo-header {stripped!r}"
-                )
-            if stripped.lower() in SHADOW_CREDENTIAL_HEADERS:
-                raise ValueError(
-                    "shadow_dispatch forward_headers cannot include credential header "
-                    f"{stripped!r}"
-                )
+    def validate_timeout(cls, value: str) -> str:
+        # Go truncates each duration component to nanoseconds. Support its
+        # decimal syntax for ms/s/m, with a bounded authoring string length.
+        number = r"(?:[0-9]+(?:\.[0-9]*)?|\.[0-9]+)"
+        if not re.fullmatch(rf"\+?(?:{number}(?:ms|s|m))+", value):
+            raise ValueError("timeout must be a Go duration using ms, s, m")
+        scales = {"ms": 1000000, "s": 1000000000, "m": 60000000000}
+        max_duration_ns = 300_000_000_000
+        nanoseconds = 0
+        for amount, unit in re.findall(rf"({number})(ms|s|m)", value):
+            whole, _, fraction = amount.partition(".")
+            scale = scales[unit]
+            component = int(whole or "0") * scale
+            component += int(fraction or "0") * scale // (10 ** len(fraction))
+            if component > max_duration_ns:
+                raise ValueError("timeout must be positive and at most 5m")
+            nanoseconds += component
+        if not 0 < nanoseconds <= max_duration_ns:
+            raise ValueError("timeout must be positive and at most 5m")
+        return value
+
+
+class ShadowDispatchBudgetConfig(BaseModel):
+    """Total fanout budgets, defaulted by the Router from the model count."""
+
+    model_config = ConfigDict(extra="forbid")
+
+    max_calls: Optional[int] = Field(
+        default=None, strict=True, gt=0, description="Default: len(models)"
+    )
+    max_response_bytes: Optional[int] = Field(
+        default=None,
+        strict=True,
+        gt=0,
+        description="Default: len(models) * 1048576 total response bytes",
+    )
+
+
+class ShadowDispatchCaptureConfig(BaseModel):
+    """Optional bounded response capture."""
+
+    model_config = ConfigDict(extra="forbid")
+
+    enabled: StrictBool = False
+    max_bytes: Optional[int] = Field(
+        default=None,
+        strict=True,
+        gt=0,
+        description="Default: 4096 * max(1, len(models))",
+    )
+
+
+class ShadowDispatchPluginConfig(BaseModel):
+    """Sampled, bounded fanout to configured models after primary dispatch."""
+
+    model_config = ConfigDict(extra="forbid")
+
+    enabled: StrictBool = False
+    models: list[StrictStr] = Field(default_factory=list, max_length=8)
+    sample_rate: Optional[float] = Field(
+        default=None,
+        ge=0.0,
+        strict=True,
+        le=1.0,
+        allow_inf_nan=False,
+        description="Default: 1 (sample every approved request)",
+    )
+    execution: ShadowDispatchExecutionConfig = Field(
+        default_factory=ShadowDispatchExecutionConfig
+    )
+    budget: ShadowDispatchBudgetConfig = Field(
+        default_factory=ShadowDispatchBudgetConfig
+    )
+    capture: ShadowDispatchCaptureConfig = Field(
+        default_factory=ShadowDispatchCaptureConfig
+    )
+
+    @field_validator("models")
+    @classmethod
+    def normalize_models(cls, names: list[str]) -> list[str]:
+        names = [name.strip() for name in names]
+        if any(not name for name in names):
+            raise ValueError("shadow_dispatch models cannot contain empty names")
+        if len(set(names)) != len(names):
+            raise ValueError("shadow_dispatch models cannot contain duplicates")
         return names
 
     @model_validator(mode="after")
-    def require_model_when_enabled(self):
-        if self.enabled and not (self.model or "").strip():
-            raise ValueError("shadow_dispatch model is required when enabled")
+    def validate_fanout(self):
+        count = len(self.models)
+        if self.enabled and not count:
+            raise ValueError("shadow_dispatch models are required when enabled")
+        for field in ("max_calls", "max_response_bytes"):
+            value = getattr(self.budget, field)
+            minimum = count if field == "max_calls" else 2 * count
+            if value is not None and value < minimum:
+                raise ValueError(
+                    f"shadow_dispatch budget.{field} must cover all models"
+                )
         return self
 
 

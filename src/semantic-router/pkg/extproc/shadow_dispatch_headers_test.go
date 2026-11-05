@@ -16,8 +16,8 @@ import (
 
 // These tests pin the shadow trust boundary for headers. A decision's
 // header_mutation runs for the primary backend and may carry its credential,
-// so nothing it sets reaches the shadow unless forward_headers names it, and
-// credential carriers never do. Only configuredProviderAuthorizer sets the shadow's key.
+// so none of its mutations reach the shadow. Only configuredProviderAuthorizer
+// sets the shadow's key.
 // Client headers never reach the shadow either, including baggage the trace
 // propagator extracts from the client: only the span context crosses.
 
@@ -90,7 +90,7 @@ func TestShadowDispatchForwardsNoDecisionHeadersByDefault(t *testing.T) {
 	assertNoShadowCredentialHeaders(t, wire)
 	for _, name := range []string{"X-Internal-Token", "x-tenant"} {
 		if got := wire.Get(name); got != "" {
-			t.Fatalf("decision header %s=%q reached the shadow without forward_headers", name, got)
+			t.Fatalf("decision header %s=%q reached the shadow", name, got)
 		}
 	}
 	if wire.Get(headers.RequestID) == "" {
@@ -98,49 +98,21 @@ func TestShadowDispatchForwardsNoDecisionHeadersByDefault(t *testing.T) {
 	}
 }
 
-func TestShadowDispatchForwardsOnlyAllowlistedDecisionHeaders(t *testing.T) {
-	backend, router, primaryModel := newShadowHeaderTestRouter(t)
-	pluginCfg := shadowTestPluginConfig()
-	pluginCfg.ForwardHeaders = []string{"X-TENANT"}
-
-	runShadowRequest(t, router, primaryModel, pluginCfg, shadowCredentialMutations)
+func TestShadowDispatchUsesOnlyCandidateCredential(t *testing.T) {
+	backend, router, primary := newShadowHeaderTestRouter(t)
+	params := router.Config.ModelConfig[shadowTestModel]
+	params.AccessKeys = map[string]string{"openai": "shadow-key"}
+	router.Config.ModelConfig[shadowTestModel] = params
+	runShadowRequest(t, router, primary, shadowTestPluginConfig(), shadowCredentialMutations)
 	waitForShadow(t, router)
 	wire := backend.headers[0]
-	if got := wire.Get("x-tenant"); got != "acme" {
-		t.Fatalf("x-tenant = %q, want the allowlisted decision header forwarded", got)
+	if wire.Get("Authorization") != "Bearer shadow-key" {
+		t.Fatal("wrong candidate credential")
 	}
-	if got := wire.Get("X-Internal-Token"); got != "" {
-		t.Fatalf("custom secret outside forward_headers reached the shadow: %q", got)
-	}
-	assertNoShadowCredentialHeaders(t, wire)
-}
-
-func TestShadowDispatchNeverForwardsCredentialsEvenWhenListed(t *testing.T) {
-	backend, router, primaryModel := newShadowHeaderTestRouter(t)
-	shadowParams := router.Config.ModelConfig[shadowTestModel]
-	shadowParams.AccessKeys = map[string]string{"openai": "shadow-key"}
-	router.Config.ModelConfig[shadowTestModel] = shadowParams
-	// Config validation rejects these names; bypass it here to prove the
-	// runtime floor holds on its own.
-	pluginCfg := shadowTestPluginConfig()
-	pluginCfg.ForwardHeaders = []string{"Authorization", shadowTestPrimaryAuthHeader, "x-api-key", "x-tenant"}
-
-	runShadowRequest(t, router, primaryModel, pluginCfg, shadowCredentialMutations)
-	waitForShadow(t, router)
-	wire := backend.headers[0]
-	if got := wire.Values("Authorization"); len(got) != 1 || got[0] != "Bearer shadow-key" {
-		t.Fatalf("Authorization = %q, want only the shadow model's static key", got)
-	}
-	for _, name := range shadowCredentialHeaderNames {
-		if name == "Authorization" {
-			continue
+	for _, name := range []string{"X-Internal-Token", "x-tenant", shadowTestPrimaryAuthHeader} {
+		if wire.Get(name) != "" {
+			t.Fatalf("primary header leaked: %s", name)
 		}
-		if got := wire.Get(name); got != "" {
-			t.Fatalf("listed credential header %s=%q still reached the shadow", name, got)
-		}
-	}
-	if got := wire.Get("x-tenant"); got != "acme" {
-		t.Fatalf("x-tenant = %q, want the harmless allowlisted header kept", got)
 	}
 }
 
@@ -187,7 +159,7 @@ func TestShadowDispatchNeverForwardsClientBaggage(t *testing.T) {
 	}
 	wire := backend.headers[0]
 	if got := wire.Values("baggage"); len(got) != 0 {
-		t.Fatalf("client baggage reached the shadow with an empty forward_headers: %q", got)
+		t.Fatalf("client baggage reached the shadow: %q", got)
 	}
 	if got := wire.Get("traceparent"); !strings.Contains(got, shadowTestClientTraceID) {
 		t.Fatalf("traceparent = %q, want the client's trace %s still propagated", got, shadowTestClientTraceID)

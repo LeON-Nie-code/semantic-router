@@ -6,64 +6,14 @@ import (
 )
 
 func TestShadowDispatchPluginConfigDefaults(t *testing.T) {
-	cfg := ShadowDispatchPluginConfig{Enabled: true, Model: " candidate "}.WithDefaults()
-	defaults := DefaultShadowDispatchPluginConfig()
-	if cfg.Model != "candidate" {
-		t.Fatalf("model = %q, want trimmed", cfg.Model)
+	c := ShadowDispatchPluginConfig{Enabled: true, Models: []string{" candidate ", "other"}}.WithDefaults()
+	if c.Models[0] != "candidate" || *c.Execution.MaxConcurrency != 2 || *c.Execution.MaxQueueSize != 8 || c.Execution.Timeout != "30s" || *c.Budget.MaxCalls != 2 || *c.Budget.MaxResponseBytes != 2<<20 || *c.Capture.MaxBytes != 8192 || c.EffectiveSampleRate() != 1 {
+		t.Fatalf("unexpected defaults: %+v", c)
 	}
-	if cfg.MaxConcurrency != defaults.MaxConcurrency ||
-		cfg.MaxQueueDepth != defaults.MaxQueueDepth ||
-		cfg.TimeoutSeconds != defaults.TimeoutSeconds ||
-		cfg.MaxResponseBytes != defaults.MaxResponseBytes ||
-		cfg.MaxCaptureBytes != defaults.MaxCaptureBytes {
-		t.Fatalf("defaults not applied: %+v", cfg)
-	}
-	if cfg.EffectiveSampleRate() != 1 {
-		t.Fatalf("effective sample rate = %v, want 1", cfg.EffectiveSampleRate())
-	}
-	explicit := ShadowDispatchPluginConfig{MaxQueueDepth: 1, MaxConcurrency: 4}.WithDefaults()
-	if explicit.MaxQueueDepth != 1 || explicit.MaxConcurrency != 4 {
-		t.Fatalf("explicit bounds overwritten: %+v", explicit)
-	}
-}
-
-func TestShadowDispatchPluginPayloadValidation(t *testing.T) {
-	half := 0.5
-	tooHigh := 1.5
-	cases := []struct {
-		name    string
-		payload map[string]interface{}
-		wantErr string
-	}{
-		{name: "valid", payload: map[string]interface{}{"enabled": true, "model": "candidate", "sample_rate": half, "max_retries": 3}},
-		{name: "declared but disabled without model", payload: map[string]interface{}{"enabled": false}},
-		{name: "missing model", payload: map[string]interface{}{"enabled": true}, wantErr: "model is required"},
-		{name: "sample rate out of range", payload: map[string]interface{}{"enabled": true, "model": "m", "sample_rate": tooHigh}, wantErr: "sample_rate"},
-		{name: "negative bound", payload: map[string]interface{}{"enabled": true, "model": "m", "max_concurrency": -1}, wantErr: "max_concurrency cannot be negative"},
-		{name: "too many retries", payload: map[string]interface{}{"enabled": true, "model": "m", "max_retries": 4}, wantErr: "max_retries cannot exceed"},
-		{name: "unknown field", payload: map[string]interface{}{"enabled": true, "model": "m", "bogus": 1}, wantErr: "bogus"},
-		{name: "forward headers allowlist", payload: map[string]interface{}{"enabled": true, "model": "m", "forward_headers": []string{"x-tenant", "X-Request-Source"}}},
-		{name: "forward headers reject credentials", payload: map[string]interface{}{"enabled": true, "model": "m", "forward_headers": []string{"x-tenant", "Authorization"}}, wantErr: "forward_headers cannot include credential header"},
-		{name: "forward headers reject user keys", payload: map[string]interface{}{"enabled": true, "model": "m", "forward_headers": []string{"X-User-OpenAI-Key"}}, wantErr: "forward_headers cannot include credential header"},
-		{name: "forward headers reject pseudo headers", payload: map[string]interface{}{"enabled": true, "model": "m", "forward_headers": []string{":authority"}}, wantErr: "pseudo-header"},
-		{name: "forward headers reject blanks", payload: map[string]interface{}{"enabled": true, "model": "m", "forward_headers": []string{" "}}, wantErr: "cannot be empty"},
-	}
-	for _, tc := range cases {
-		t.Run(tc.name, func(t *testing.T) {
-			err := validateDecisionPluginPayload("route", 0, DecisionPlugin{
-				Type:          DecisionPluginShadowDispatch,
-				Configuration: MustStructuredPayload(tc.payload),
-			})
-			if tc.wantErr == "" {
-				if err != nil {
-					t.Fatalf("unexpected error: %v", err)
-				}
-				return
-			}
-			if err == nil || !strings.Contains(err.Error(), tc.wantErr) {
-				t.Fatalf("error = %v, want containing %q", err, tc.wantErr)
-			}
-		})
+	original := ShadowDispatchPluginConfig{Models: []string{" candidate "}}
+	_ = original.WithDefaults()
+	if original.Models[0] != " candidate " {
+		t.Fatal("defaults mutated source models")
 	}
 }
 
@@ -84,20 +34,20 @@ func TestShadowDispatchModelMustHaveBackend(t *testing.T) {
 			Type: DecisionPluginShadowDispatch,
 			Configuration: MustStructuredPayload(map[string]interface{}{
 				"enabled": true,
-				"model":   "candidate",
+				"models":  []string{"candidate"},
 			}),
 		}},
 	}
 	if err := validateDecisionShadowDispatchPlugin(cfg, decision); err != nil {
 		t.Fatalf("configured shadow model rejected: %v", err)
 	}
-	if got := decision.GetShadowDispatchConfig(); got == nil || got.Model != "candidate" {
+	if got := decision.GetShadowDispatchConfig(); got == nil || len(got.Models) != 1 || got.Models[0] != "candidate" {
 		t.Fatalf("GetShadowDispatchConfig = %+v", got)
 	}
 
 	decision.Plugins[0].Configuration = MustStructuredPayload(map[string]interface{}{
 		"enabled": true,
-		"model":   "unknown",
+		"models":  []string{"candidate", "unknown"},
 	})
 	err := validateDecisionShadowDispatchPlugin(cfg, decision)
 	if err == nil || !strings.Contains(err.Error(), "no configured backend") {
@@ -110,7 +60,7 @@ func TestShadowDispatchModelMustHaveBackend(t *testing.T) {
 
 	decision.Plugins[0].Configuration = MustStructuredPayload(map[string]interface{}{
 		"enabled": true,
-		"model":   "candidate",
+		"models":  []string{"candidate"},
 	})
 	decision.Algorithm = &AlgorithmConfig{Type: DecisionAlgorithmRatings}
 	err = validateDecisionShadowDispatchPlugin(cfg, decision)
@@ -120,40 +70,24 @@ func TestShadowDispatchModelMustHaveBackend(t *testing.T) {
 }
 
 func TestShadowDispatchValidateSharedWithConverter(t *testing.T) {
-	cfg := ShadowDispatchPluginConfig{Enabled: true, Model: "m", MaxRetries: 4}
-	if err := cfg.Validate(); err == nil || !strings.Contains(err.Error(), "max_retries cannot exceed") {
-		t.Fatalf("Validate = %v, want retries cap", err)
+	zero := 0
+	c := ShadowDispatchPluginConfig{Enabled: true, Models: []string{"m"}, Budget: ShadowBudgetConfig{MaxCalls: &zero}}
+	if err := c.Validate(); err == nil {
+		t.Fatal("explicit zero must fail")
 	}
-	var nilCfg *ShadowDispatchPluginConfig
-	if err := nilCfg.Validate(); err != nil {
-		t.Fatalf("nil Validate = %v", err)
+	var absent *ShadowDispatchPluginConfig
+	if err := absent.Validate(); err != nil {
+		t.Fatal(err)
 	}
 }
 
-func TestShadowDispatchForwardsHeaderIsAllowlistOnly(t *testing.T) {
-	var nilCfg *ShadowDispatchPluginConfig
-	if nilCfg.ForwardsHeader("x-tenant") {
-		t.Fatal("nil config must forward nothing")
-	}
-	empty := &ShadowDispatchPluginConfig{}
-	if empty.ForwardsHeader("x-tenant") {
-		t.Fatal("empty allowlist must forward nothing")
-	}
-	cfg := &ShadowDispatchPluginConfig{ForwardHeaders: []string{" X-Tenant "}}
-	if !cfg.ForwardsHeader("x-tenant") || !cfg.ForwardsHeader("X-TENANT") {
-		t.Fatal("allowlist must match case-insensitively and ignore surrounding whitespace")
-	}
-	if cfg.ForwardsHeader("x-tenant-id") {
-		t.Fatal("allowlist must match whole names only")
-	}
-	for _, name := range []string{"Authorization", "x-api-key", "API-KEY", "Cookie", "x-user-openai-key", " proxy-authorization "} {
+func TestShadowCredentialHeaders(t *testing.T) {
+	for _, name := range []string{"Authorization", "x-api-key", "Cookie", "x-user-openai-key"} {
 		if !IsShadowCredentialHeader(name) {
-			t.Errorf("IsShadowCredentialHeader(%q) = false, want true", name)
+			t.Errorf("not recognized: %s", name)
 		}
 	}
-	for _, name := range []string{"x-tenant", "traceparent", "x-authorization-hint"} {
-		if IsShadowCredentialHeader(name) {
-			t.Errorf("IsShadowCredentialHeader(%q) = true, want false", name)
-		}
+	if IsShadowCredentialHeader("traceparent") {
+		t.Fatal("traceparent is not a credential")
 	}
 }

@@ -10,33 +10,34 @@ translation:
 
 ## 概览
 
-`shadow_dispatch` 是一个路由局部插件，将已批准请求的有界采样副本发送到次要模型，并记录结果，而不更改或延迟主响应。
+`shadow_dispatch` 对已批准的请求进行采样，将副本发送给一组候选模型并记录结果，主响应无需等待，也不会被候选结果改变。
 
 ## 主要优势
 
-- 在候选模型服务任何用户之前，用真实流量观察它。
-- 让线上响应独立于 shadow 延迟、失败或输出。
-- 明确限制采样、并发、队列深度、超时、响应大小和重试。
-- 在回放记录上记录主路径与 shadow 的身份、时序、结果和内容哈希，供审计和后续比较。
+- 在灰度发布前，用同一批线上流量比较多个候选模型。
+- 主响应不受候选模型的延迟、失败或输出影响。
+- 通过调用次数、时间、字节数和并发限制控制后台工作量。
+- 将候选结果关联到主请求的回放记录，便于后续比较。
 
 ## 解决什么问题？
 
-把新模型提升进路由配方需要来自生产形态请求的证据。离线评估会错过真实提示词分布，灰度发布又会把未验证模型暴露给用户。Shadow dispatch 填补中间步骤：主模型仍回答每个请求，同时同一份最终请求的副本在后台发送给候选模型。Shadow 结果作为不可变结果存储在该请求的回放记录上，因此运维人员稍后可以关联主路径与 shadow 观察，而无需暴露受保护内容。
+离线评估可能无法覆盖真实的提示词分布。Shadow dispatch 让候选模型接收贴近生产的请求，同时仍由主模型回答用户。每个候选模型的结果都会追加到请求的回放记录中，供后续比较。
 
-Shadow 副本从主分发所基于的同一份已批准中性请求开始，此时所有请求插件都已运行。随后通过主分发使用的同一编码和提供商适配步骤为 shadow 模型渲染，因此推理控制遵循 shadow 模型家族，而不是主模型。寻址方式与主分发对该后端的寻址相同，包括提供商配置的 `chat_path` 和 Azure OpenAI 的 `api_version` 查询。它始终以非流式发送。只传播 W3C `traceparent` 和 `tracestate` 请求头；不传播客户端请求头，这包括 `baggage`，tracing propagator 会从客户端提取它，其中可能携带客户端选择附加的任何内容。决策请求头改写为主后端运行并留在那里，除非 `forward_headers` 点名它们，因此运维人员按请求头选择加入，路由器无法识别的自定义凭据默认永不复制。已知凭据载体，以及主或 shadow 提供商配置解析为其 `auth_header` 的请求头，即使被列出也会丢弃。只使用路由器为 shadow 模型后端准备的静态凭据，因此主路径凭据永不会进入 shadow 后端。Shadow 调用只发送到配置的后端地址：永不跟随重定向应答，因此提示词和 shadow 凭据都不会被转发到配置未点名的源。
+每份 shadow 副本都从请求插件执行后的已批准中性请求生成。路由器通过常规编码和提供商适配为候选模型构建请求，包括推理控制、提供商的 `chat_path` 和 Azure OpenAI 的 `api_version`。Shadow 调用始终使用非流式响应。
+
+身份验证使用各候选模型配置的提供商凭据。HTTPS 严格校验 TLS 证书。请求中只传播 W3C `traceparent` 和 `tracestate` 请求头；客户端凭据、`baggage` 和决策请求头改写都不会转发。路由器不跟随重定向，因此提示词和凭据只会发送到配置的后端地址。
 
 ## 何时使用
 
-- 应在灰度发布前用线上流量评估候选模型
-- 无论 shadow 成功、失败还是超时，主响应都必须保持相同
-- 该观察的资源使用必须按路由明确且有界
-- 回放或审计工具需要按请求身份关联主路径与 shadow 观察
+- 在灰度发布前用线上流量评估候选模型。
+- 让候选模型的后台工作独立于线上响应。
+- 收集回放观测，用于对比数据集或外部评审模型。
 
-不要用它影响线上请求、给输出质量打分，或构建训练集。该插件只记录结果。
+该插件只记录结果，不为回答评分，也不影响线上响应。
 
 ## 配置
 
-将该插件与 `router_replay` 一起添加到决策，以便结果有记录可附着：
+将该插件与 `router_replay` 一起添加到决策，以便结果有记录可附着。将候选名称替换为 `providers.models` 中配置的逻辑模型：
 
 ```yaml
 plugins:
@@ -46,45 +47,50 @@ plugins:
   - type: shadow_dispatch
     configuration:
       enabled: true
-      model: candidate-model
+      models: [candidate-a, candidate-b]
       sample_rate: 0.05
-      max_concurrency: 2
-      max_queue_depth: 8
-      timeout_seconds: 30
-      max_response_bytes: 1048576
-      max_retries: 0
-      capture_response_body: false
-      max_capture_bytes: 4096
-      tls_skip_verify: false
-      forward_headers: []
+      execution:
+        max_concurrency: 2
+        max_queue_size: 8
+        timeout: 30s
+      budget:
+        max_calls: 2
+        max_response_bytes: 2097152
+      capture:
+        enabled: false
+        max_bytes: 8192
 ```
+
+这是一次不兼容的配置更新：请用此结构替换旧的 shadow 配置。旧配置会在加载时被拒绝。
 
 | 字段 | 默认值 | 含义 |
 | --- | --- | --- |
-| `enabled` | 必需 | 为该决策打开 shadow。 |
-| `model` | 启用时必需 | 接收 shadow 副本的已配置逻辑模型。必须在 `providers.models` 中有后端。 |
-| `sample_rate` | `1.0` | 要 shadow 的合格请求比例，范围为 `[0, 1]`。`0` 保持插件已声明但永不分发。 |
-| `max_concurrency` | `2` | 该决策的进行中 shadow 调用数。 |
-| `max_queue_depth` | `8` | 等待槽位的调用。超出部分会以原因 `queue_full` 丢弃。 |
-| `timeout_seconds` | `30` | 队列等待加执行的截止时间，所有重试共享。 |
-| `max_response_bytes` | `1048576` | 读取的最大 shadow 响应正文。更大的正文会以 `response_too_large` 失败。 |
-| `max_retries` | `0` | 传输错误或可重试状态上的额外尝试。上限为 `3`。 |
-| `capture_response_body` | `false` | 在结果中存储 shadow 文本的有界摘录。默认关闭；只保留大小、token 和 SHA-256。 |
-| `max_capture_bytes` | `4096` | 开启采集时的摘录上限。 |
-| `tls_skip_verify` | `false` | 跳过由内部 CA 签名的 https shadow 后端的证书校验。此设置仅作用于 shadow HTTP 客户端，不会配置主请求的后端传输。 |
-| `forward_headers` | `[]` | Shadow 副本可以携带的决策 `header_mutation` 名称，按不区分大小写匹配。决策为主后端设置的其他内容都不会转发，因此像 `X-Internal-Token` 这样的自定义凭据留在主路径。已知凭据载体（`Authorization`、`Proxy-Authorization`、`Cookie`、`x-api-key`、`api-key`、`x-goog-api-key`、`x-user-*-key` 请求头）即使被列出，也会在配置加载时拒绝并在运行时丢弃。 |
+| `enabled` | 必需 | 设为 `true`，为该决策启用 shadow dispatch。 |
+| `models` | 启用时必需 | 已配置逻辑模型的列表，最多 8 个。单个候选也使用列表：`[candidate-a]`。 |
+| `sample_rate` | `1.0` | 要分发的合格请求组比例，范围为 `[0, 1]`。整个请求组只做一次采样决定。`0` 禁用分发。 |
+| `execution.max_concurrency` | `2` | 同一 recipe 和 decision 下，跨请求共享的候选 HTTP 调用并发上限。 |
+| `execution.max_queue_size` | `8` | 同一 recipe 和 decision 下，跨请求共享的待处理请求组上限。计数单位是组，而不是候选调用。 |
+| `execution.timeout` | `30s` | 每组的截止时间，包括队列等待及全部候选调用。必须为正，且不超过 `5m`。 |
+| `budget.max_calls` | 配置的模型数量 | 每组实际 HTTP 调用次数上限，必须足以覆盖全部配置模型。首个版本不重试。 |
+| `budget.max_response_bytes` | 配置的模型数量 × `1048576` | 每组响应字节总预算，在分发前分配给有效候选。 |
+| `capture.enabled` | `false` | 在回放结果中存储候选文本的有界摘录。 |
+| `capture.max_bytes` | 配置的模型数量 × `4096` | 每组采集字节总上限，在有效候选间平均分配。 |
 
-当请求被采样排除，或主分发已经选择了 shadow 模型时，会跳过 shadow，只产生指标而不产生结果。通过 looper 执行的决策（ratings、confidence、fusion、ReMoM、workflows）会在配置加载时拒绝该插件，因为 shadow hook 只在单模型提供商分发上运行。
+路由器对每个请求组只采样一次，并从有效候选中排除主模型。请求被采样排除，或组内没有剩余候选时，只产生指标，不产生 shadow 结果。通过 looper 执行的决策（ratings、confidence、fusion、ReMoM、workflows）会在配置加载时拒绝该插件；该 hook 只在单模型提供商分发上运行。
+
+并发与队列容量由每个 recipe 和 decision 下的请求共享。截止时间和预算则分别作用于每个请求组。在上述双候选示例中，每个候选获得 1 MiB 响应预算和 4096 字节采集额度。额度在分发前固定；发生错误时仍保守地计入已分配额度，不会释放给其他候选。
+
+准入限制覆盖调用次数、耗时、字节数和并发。返回的 token 用量和基于目录定价估算的费用只是观测数据，不是 token 或费用准入限制。缺失的用量表示未知，而不是零。
 
 ### 失败开放行为 {#fail-open-behavior}
 
-请求路径做一次非阻塞槽位检查后返回。其余工作在主分发响应构建完成后，于有界 worker 中运行。缓慢、不可用、格式错误或过载的 shadow 端点不能更改主响应或其延迟。每次 shadow 都以恰好一种结果结束：
+请求路径做一次非阻塞的组准入检查后返回。其余工作在主分发响应构建完成后，于有界 worker 中运行。主路径不等待候选返回，缓慢或失败的候选不会改变主响应。每个候选调用都以一种结果结束：
 
 | 结果 | 原因 |
 | --- | --- |
 | `completed` | `completed` |
-| `failed` | `backend_unresolved`、`credential_unresolved`、`encode_failed`、`timeout`、`transport_error`、`upstream_status`、`redirect_rejected`、`response_too_large`、`malformed_response` |
-| `dropped` | `queue_full`、`queue_timeout`、`router_closing`、`same_as_primary`、`internal_request`、`request_unavailable` |
+| `failed` | `backend_unresolved`、`credential_unresolved`、`encode_failed`、`timeout`、`queue_timeout`、`canceled`、`router_closing`、`transport_error`、`upstream_status`、`redirect_rejected`、`response_too_large`、`malformed_response` |
+| `dropped` | `queue_full`、`same_as_primary`、`internal_request`、`request_unavailable` |
 | `sampled_out` | `sampled_out` |
 
 结果和原因导出为 `sr_shadow_dispatch_total{decision,result,reason}`，以及 `sr_shadow_dispatch_latency_seconds`、`sr_shadow_dispatch_inflight` 和 `sr_shadow_dispatch_queued`。由资源边界导致的丢弃通过指标和结构化 `shadow_dispatch_dropped` 事件报告，而不是写入回放，因此过载的 shadow 通道不会放大回放存储负载。
@@ -96,18 +102,18 @@ plugins:
 | 含义 | 原因 | 如何解读 |
 | --- | --- | --- |
 | 候选拒绝了请求 | 带 4xx `status_code` 的 `upstream_status` | Shadow 模型无法接受已批准请求，例如不支持的参数或上下文窗口太小。计入候选问题。 |
-| 候选健康或容量 | 带 5xx `status_code` 的 `upstream_status`、`timeout`、`transport_error` | 后端不可达、过载，或在 `max_retries` 之后仍无法在 `timeout_seconds` 内完成。这衡量部署，而不是回答质量。 |
+| 候选健康或容量 | 带 5xx `status_code` 的 `upstream_status`、`timeout`、`transport_error` | 后端不可达、过载，或无法在该组的 `execution.timeout` 内完成。这衡量部署，而不是回答质量。 |
 | 候选尝试重定向 | 带 3xx `status_code` 的 `redirect_rejected` | 后端以重定向应答。路由器永不跟随，因此提示词和 shadow 凭据只到达配置的后端。请将 shadow 模型指向后端的最终地址。 |
-| 候选输出问题 | `malformed_response`、`response_too_large` | 后端已应答，但正文对其线格式无效，或超过 `max_response_bytes`。 |
+| 候选输出问题 | `malformed_response`、`response_too_large` | 后端已应答，但正文对其线格式无效，或超过其分配到的 `budget.max_response_bytes` 额度。 |
 | 路由器侧，与候选无关 | `backend_unresolved`、`credential_unresolved`、`encode_failed` | 路由器无法构建或寻址 shadow 调用。修复配置，并从任何候选比较中排除这些项。 |
 
 `dropped` 和 `sampled_out` 永不进入回放记录。它们表示路由器选择不发送 shadow，因此不携带关于候选模型的信号，只在指标和日志中可见。
 
 ### 回放与审计采集 {#replay-and-audit-capture}
 
-已完成和失败的 shadow 会向主请求的回放记录追加一条结果，带有 `source: shadow_dispatch`、`target: model`、`target_ref: <shadow model>`、判定和原因。结果元数据携带主路径与 shadow 的请求身份、主路径与 shadow 的模型和后端、决策和配方、采样率、入队、开始和完成时间戳、队列等待和延迟、尝试次数、状态码、响应大小、停止原因、token 计数，以及 shadow 文本的 SHA-256。结果只追加不改写。
+每个已完成或失败的候选调用会向主请求的回放记录追加一条结果，带有 `source: shadow_dispatch`、`target: model`、`target_ref: <shadow model>`、判定和原因。结果元数据携带主路径与 shadow 的请求身份、主路径与 shadow 的模型和后端、决策和配方、采样率、入队、开始和完成时间戳、队列等待和延迟、尝试次数、状态码、响应大小、停止原因、token 计数，以及 shadow 文本的 SHA-256。结果只追加不改写。
 
-回放脱敏对 shadow 结果的应用方式与记录其余部分相同：没有内容权限的查看者可以看到路由和时序字段，但看不到 `target_ref`、`reason` 或 `metadata`。除非回放存储及其读取者已获准处理提示词级内容，否则请关闭 `capture_response_body`。片段见：
+回放脱敏对 shadow 结果的应用方式与记录其余部分相同：没有内容权限的查看者可以看到路由和时序字段，但看不到 `target_ref`、`reason` 或 `metadata`。仅在需要保存响应文本时启用 `capture.enabled`。片段见：
 [`config/fragments/plugin/shadow-dispatch/sampled.yaml`](https://github.com/vllm-project/semantic-router/blob/main/config/fragments/plugin/shadow-dispatch/sampled.yaml)。
 
 ### 导出对比数据集 {#export-a-comparison-dataset}
@@ -136,7 +142,7 @@ curl -H "Authorization: Bearer $ROUTER_MANAGEMENT_TOKEN" \
   "$ROUTER_MANAGEMENT_URL/api/v1/observability/replays/dataset/judge-tasks?recipe=vault&seed=2026-q3&split=train:8&split=eval:2&blinding_key=$JUDGE_KEY"
 ```
 
-只有当请求和两段回答都能哈希回清单中的摘要时才会构建一对任务。存储的请求会写明路由器把它发往的模型，因此输入摘要覆盖去掉顶层模型字段（记录中的请求为 `Model`，客户端请求体为 `model`）后的请求体，这也是评审读到的 `input`，每个任务都带有这个 `input_digest`。这改变了输入标识、去重和拆分，因此清单版本为 `shadow-dataset.v2`，任务版本为 `shadow-judge-tasks.v2`。`shadow-dataset.v1` 清单会被拒绝。影子文本来自采集的摘录，因此影子决策需要开启 `capture_response_body`，并把 `max_capture_bytes` 设得足以容纳完整回答。被截断的摘录，或在存储前被响应阶段插件改写的主模型回答，都会被排除并计为 `arm_text_digest_mismatch`；完全没有文本的一对计为 `arm_text_missing`。与摘要不符的请求计为 `input_text_digest_mismatch`，缺失的请求计为 `input_text_missing`。提到自身模型名称的回答会被标记为 `names_own_model`，因为任何标签都无法对评审模型隐藏这一点。
+只有当请求和两段回答都能哈希回清单中的摘要时才会构建一对任务。存储的请求会写明路由器把它发往的模型，因此输入摘要覆盖去掉顶层模型字段（记录中的请求为 `Model`，客户端请求体为 `model`）后的请求体，这也是评审读到的 `input`，每个任务都带有这个 `input_digest`。这改变了输入标识、去重和拆分，因此清单版本为 `shadow-dataset.v2`，任务版本为 `shadow-judge-tasks.v2`。`shadow-dataset.v1` 清单会被拒绝。影子文本来自采集的摘录，因此影子决策需要开启 `capture.enabled`，并把 `capture.max_bytes` 设得足够大，使每个候选分到的额度都能容纳完整回答。被截断的摘录，或在存储前被响应阶段插件改写的主模型回答，都会被排除并计为 `arm_text_digest_mismatch`；完全没有文本的一对计为 `arm_text_missing`。与摘要不符的请求计为 `input_text_digest_mismatch`，缺失的请求计为 `input_text_missing`。提到自身模型名称的回答会被标记为 `names_own_model`，因为任何标签都无法对评审模型隐藏这一点。
 
 任务携带提示词与回答文本，因此该接口需要 `replay.detail` 权限，对没有该权限的调用方直接拒绝，而不是返回脱敏后的任务。评审模型在路由器之外运行。
 

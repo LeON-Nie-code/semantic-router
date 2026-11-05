@@ -431,6 +431,9 @@ type RequestContext struct {
 	// ShadowDispatchPluginConfig is the per-decision shadow_dispatch plugin
 	// configuration, or nil when the selected decision declares none.
 	ShadowDispatchPluginConfig *config.ShadowDispatchPluginConfig
+	// ShadowCancel stops this request group on abandonment, without tying it to normal response completion.
+	ShadowCancel          context.CancelFunc
+	shadowPrimaryComplete bool
 
 	// Looper context
 	LooperRequest   bool                  // True only for a request-graph hop: in process, or token-authenticated

@@ -7196,46 +7196,67 @@
       "additionalProperties": false,
       "type": "object"
     },
+    "ShadowBudgetConfig": {
+      "properties": {
+        "max_calls": {
+          "type": "integer"
+        },
+        "max_response_bytes": {
+          "type": "integer"
+        }
+      },
+      "additionalProperties": false,
+      "type": "object"
+    },
+    "ShadowCaptureConfig": {
+      "properties": {
+        "enabled": {
+          "type": "boolean"
+        },
+        "max_bytes": {
+          "type": "integer"
+        }
+      },
+      "additionalProperties": false,
+      "type": "object"
+    },
     "ShadowDispatchPluginConfig": {
       "properties": {
         "enabled": {
           "type": "boolean"
         },
-        "model": {
-          "type": "string"
-        },
-        "sample_rate": {
-          "type": "number"
-        },
-        "max_concurrency": {
-          "type": "integer"
-        },
-        "max_queue_depth": {
-          "type": "integer"
-        },
-        "timeout_seconds": {
-          "type": "integer"
-        },
-        "max_response_bytes": {
-          "type": "integer"
-        },
-        "max_retries": {
-          "type": "integer"
-        },
-        "capture_response_body": {
-          "type": "boolean"
-        },
-        "max_capture_bytes": {
-          "type": "integer"
-        },
-        "tls_skip_verify": {
-          "type": "boolean"
-        },
-        "forward_headers": {
+        "models": {
           "items": {
             "type": "string"
           },
           "type": "array"
+        },
+        "sample_rate": {
+          "type": "number"
+        },
+        "execution": {
+          "$ref": "#/$defs/ShadowExecutionConfig"
+        },
+        "budget": {
+          "$ref": "#/$defs/ShadowBudgetConfig"
+        },
+        "capture": {
+          "$ref": "#/$defs/ShadowCaptureConfig"
+        }
+      },
+      "additionalProperties": false,
+      "type": "object"
+    },
+    "ShadowExecutionConfig": {
+      "properties": {
+        "max_concurrency": {
+          "type": "integer"
+        },
+        "max_queue_size": {
+          "type": "integer"
+        },
+        "timeout": {
+          "type": "string"
         }
       },
       "additionalProperties": false,

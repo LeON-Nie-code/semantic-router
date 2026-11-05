@@ -2,33 +2,34 @@
 
 ## Overview
 
-`shadow_dispatch` is a route-local plugin that sends a bounded, sampled copy of the approved request to a secondary model and records the outcome without changing or delaying the primary response.
+`shadow_dispatch` sends a sampled copy of an approved request to a group of candidate models and records their outcomes without changing or waiting on the primary response.
 
 ## Key Advantages
 
-- Observes a candidate model on real traffic before it serves any user.
-- Keeps the live response independent from shadow latency, failure, or output.
-- Bounds sampling, concurrency, queue depth, timeout, response size, and retries explicitly.
-- Records primary and shadow identity, timing, outcome, and a content hash on the replay record for audit and later comparison.
+- Compare several candidates on the same sample of live traffic before gray release.
+- Keep the primary response independent of candidate latency, failures, and output.
+- Bound background work with call, time, byte, and concurrency limits.
+- Join candidate outcomes to the primary request's replay record for later comparison.
 
 ## What Problem Does It Solve?
 
-Promoting a new model into a routing recipe needs evidence from production-shaped requests. Offline evaluation misses real prompt distributions, and gray release exposes users to an unproven model. Shadow dispatch fills the step in between: the primary model still answers every request, while a copy of the same finalized request is sent to the candidate in the background. The shadow result is stored as an immutable outcome on the request's replay record, so operators can correlate primary and shadow observations later without exposing protected content.
+Offline evaluation can miss real prompt distributions. Shadow dispatch lets candidate models see production-shaped requests while the primary model continues to answer users. Each candidate's outcome is appended to the request's replay record for comparison later.
 
-The shadow copy starts from the same approved neutral request the primary dispatch was built from, after every request plugin has run. It is then rendered for the shadow model through the same encode and provider-adaptation steps a primary dispatch uses, so reasoning controls follow the shadow model's family, not the primary's. It is addressed the way the primary dispatch would address that backend, including a provider profile's `chat_path` and an Azure OpenAI `api_version` query. It is always sent non-streaming. Only the W3C `traceparent` and `tracestate` headers are propagated; client headers are not, and that includes `baggage`, which the tracing propagator extracts from the client and which may carry anything the client chose to attach. Decision header mutations run for the primary backend and stay there unless `forward_headers` names them, so an operator opts in per header and a custom credential the router cannot recognise is never copied by default. Known credential carriers and whichever header the primary or shadow provider profile resolves as its `auth_header` are dropped even when listed. Only the router's own static credentials for the shadow model's backend are used, so a primary credential can never cross into the shadow backend. The shadow call is sent only to the configured backend address: a redirect answer is never followed, so neither the prompt nor the shadow credential can be forwarded to an origin the configuration does not name.
+Each shadow copy starts from the approved neutral request after request plugins have run. The router renders it for the candidate through the usual encoding and provider adaptation, including reasoning controls, the provider's `chat_path`, and Azure OpenAI's `api_version`. Shadow calls are non-streaming.
+
+Authentication comes from each candidate's configured provider credentials. HTTPS uses strict TLS certificate verification. Only W3C `traceparent` and `tracestate` headers propagate from the request; client credentials, `baggage`, and decision header mutations are not forwarded. Redirects are never followed, so prompts and credentials stay at the configured backend address.
 
 ## When to Use
 
-- a candidate model should be evaluated on live traffic before gray release
-- the primary response must stay identical whether the shadow succeeds, fails, or times out
-- resource use for the observation must be explicit and bounded per route
-- replay or audit tooling needs to join primary and shadow observations by request identity
+- Evaluate candidates on live traffic before gray release.
+- Keep candidate work separate from the live response.
+- Collect replay observations for a comparison dataset or an external judge.
 
-Do not use it to influence the live request, to grade output quality, or to build a training set. The plugin records outcomes only.
+The plugin records outcomes; it does not grade answers or influence the live response.
 
 ## Configuration
 
-Add the plugin to a decision alongside `router_replay` so outcomes have a record to attach to:
+Add the plugin to a decision alongside `router_replay` so outcomes have a record to attach to. Replace the candidate names with logical models configured in `providers.models`:
 
 ```yaml
 plugins:
@@ -38,45 +39,50 @@ plugins:
   - type: shadow_dispatch
     configuration:
       enabled: true
-      model: candidate-model
+      models: [candidate-a, candidate-b]
       sample_rate: 0.05
-      max_concurrency: 2
-      max_queue_depth: 8
-      timeout_seconds: 30
-      max_response_bytes: 1048576
-      max_retries: 0
-      capture_response_body: false
-      max_capture_bytes: 4096
-      tls_skip_verify: false
-      forward_headers: []
+      execution:
+        max_concurrency: 2
+        max_queue_size: 8
+        timeout: 30s
+      budget:
+        max_calls: 2
+        max_response_bytes: 2097152
+      capture:
+        enabled: false
+        max_bytes: 8192
 ```
+
+This is a breaking configuration update: replace old shadow configurations with this structure. Old configurations are rejected at load time.
 
 | Field | Default | Meaning |
 | --- | --- | --- |
-| `enabled` | required | Turns the shadow on for this decision. |
-| `model` | required when enabled | Configured logical model that receives the shadow copy. Must have a backend in `providers.models`. |
-| `sample_rate` | `1.0` | Fraction of eligible requests to shadow, in `[0, 1]`. `0` keeps the plugin declared but never dispatches. |
-| `max_concurrency` | `2` | In-flight shadow calls for this decision. |
-| `max_queue_depth` | `8` | Calls waiting for a slot. Anything beyond is dropped with reason `queue_full`. |
-| `timeout_seconds` | `30` | Deadline for queue wait plus execution, shared by all retries. |
-| `max_response_bytes` | `1048576` | Largest shadow response body that is read. Larger bodies fail with `response_too_large`. |
-| `max_retries` | `0` | Extra attempts on transport errors or retryable statuses. Capped at `3`. |
-| `capture_response_body` | `false` | Store a bounded excerpt of the shadow text in the outcome. Off by default; only sizes, tokens, and a SHA-256 are kept. |
-| `max_capture_bytes` | `4096` | Excerpt bound when capture is on. |
-| `tls_skip_verify` | `false` | Skip certificate verification for an https shadow backend signed by an internal CA. This setting applies only to the shadow HTTP client; it does not configure primary backend transport. |
-| `forward_headers` | `[]` | Decision `header_mutation` names the shadow copy may carry, matched case-insensitively. Nothing else a decision sets for the primary backend is forwarded, so a custom credential such as `X-Internal-Token` stays on the primary path. Known credential carriers (`Authorization`, `Proxy-Authorization`, `Cookie`, `x-api-key`, `api-key`, `x-goog-api-key`, the `x-user-*-key` headers) are rejected at config load and dropped at run time even if listed. |
+| `enabled` | required | Set to `true` to enable shadow dispatch for this decision. |
+| `models` | required when enabled | List of configured logical models, at most 8. A single candidate also uses a list: `[candidate-a]`. |
+| `sample_rate` | `1.0` | Fraction of eligible request groups to dispatch, in `[0, 1]`. One sampling decision covers the whole group. `0` disables dispatch. |
+| `execution.max_concurrency` | `2` | Maximum in-flight candidate HTTP calls, shared across requests for the same recipe and decision. |
+| `execution.max_queue_size` | `8` | Maximum pending request groups for the same recipe and decision, shared across requests. Counts groups, not candidate calls. |
+| `execution.timeout` | `30s` | Per-group deadline, including queue wait and all candidate calls. Must be positive and at most `5m`. |
+| `budget.max_calls` | Number of configured models | Actual HTTP call limit per group. Must cover all configured models. The first version makes no retries. |
+| `budget.max_response_bytes` | Number of configured models × `1048576` | Aggregate response byte budget per group, divided up front among effective candidates. |
+| `capture.enabled` | `false` | Store bounded excerpts of candidate text in replay outcomes. |
+| `capture.max_bytes` | Number of configured models × `4096` | Aggregate capture byte limit per group, divided equally among effective candidates. |
 
-A shadow is skipped, with a metric but no outcome, when the request is sampled out or when the primary dispatch already selected the shadow model. Decisions that execute through the looper (ratings, confidence, fusion, ReMoM, workflows) reject the plugin at config load, because the shadow hook runs only on single-model provider dispatch.
+The router samples once per request group and excludes the primary model from its effective candidates. A sampled-out request, or a group with no remaining candidates, produces metrics but no shadow outcome. Decisions that execute through the looper (ratings, confidence, fusion, ReMoM, workflows) reject the plugin at config load; the hook runs only on single-model provider dispatch.
+
+Concurrency and queue capacity are shared across requests for each recipe and decision. The deadline and budgets apply to each request group. In the two-candidate example, the response budget gives each candidate 1 MiB and capture allows 4096 bytes each. Allocations are fixed before dispatch; errors remain charged conservatively rather than freeing budget for another candidate.
+
+Admission limits cover calls, elapsed time, bytes, and concurrency. Reported token usage and cost estimates based on catalog pricing are observations, not token or cost admission limits. Missing usage is unknown, not zero.
 
 ### Fail-open behavior
 
-The request path does one non-blocking slot check and returns. Everything else runs in a bounded worker after the primary dispatch response has been built. A slow, unavailable, malformed, or overloaded shadow endpoint cannot change the primary response or its latency. Every shadow ends in exactly one result:
+The request path makes a non-blocking group admission check and returns. Everything else runs in a bounded worker after the primary dispatch response has been built. The primary path does not wait for candidate responses. Slow or failed candidates leave its response unchanged. Each candidate call ends in one result:
 
 | Result | Reasons |
 | --- | --- |
 | `completed` | `completed` |
-| `failed` | `backend_unresolved`, `credential_unresolved`, `encode_failed`, `timeout`, `transport_error`, `upstream_status`, `redirect_rejected`, `response_too_large`, `malformed_response` |
-| `dropped` | `queue_full`, `queue_timeout`, `router_closing`, `same_as_primary`, `internal_request`, `request_unavailable` |
+| `failed` | `backend_unresolved`, `credential_unresolved`, `encode_failed`, `timeout`, `queue_timeout`, `canceled`, `router_closing`, `transport_error`, `upstream_status`, `redirect_rejected`, `response_too_large`, `malformed_response` |
+| `dropped` | `queue_full`, `same_as_primary`, `internal_request`, `request_unavailable` |
 | `sampled_out` | `sampled_out` |
 
 Results and reasons are exported as `sr_shadow_dispatch_total{decision,result,reason}`, with `sr_shadow_dispatch_latency_seconds`, `sr_shadow_dispatch_inflight`, and `sr_shadow_dispatch_queued`. Drops caused by resource bounds are reported through metrics and a structured `shadow_dispatch_dropped` event rather than a replay write, so an overloaded shadow lane cannot amplify load on the replay store.
@@ -88,23 +94,23 @@ A `failed` outcome does not always say something about the candidate model. Read
 | Meaning | Reasons | How to read it |
 | --- | --- | --- |
 | Candidate rejected the request | `upstream_status` with a 4xx `status_code` | The shadow model could not accept the approved request, for example an unsupported parameter or a context window that is too small. Count it against the candidate. |
-| Candidate health or capacity | `upstream_status` with a 5xx `status_code`, `timeout`, `transport_error` | The backend was unreachable, overloaded, or too slow within `timeout_seconds` after `max_retries`. This measures the deployment, not answer quality. |
+| Candidate health or capacity | `upstream_status` with a 5xx `status_code`, `timeout`, `transport_error` | The backend was unreachable, overloaded, or too slow within the group’s `execution.timeout`. This measures the deployment, not answer quality. |
 | Candidate tried to redirect | `redirect_rejected` with a 3xx `status_code` | The backend answered with a redirect. The router never follows it, so the prompt and the shadow credential only reached the configured backend. Point the shadow model at the backend's final address. |
-| Candidate output problem | `malformed_response`, `response_too_large` | The backend answered but the body was not a valid response for its wire format or exceeded `max_response_bytes`. |
+| Candidate output problem | `malformed_response`, `response_too_large` | The backend answered but the body was not a valid response for its wire format or exceeded its share of `budget.max_response_bytes`. |
 | Router-side, not about the candidate | `backend_unresolved`, `credential_unresolved`, `encode_failed` | The router could not build or address the shadow call. Fix the configuration and exclude these from any candidate comparison. |
 
 `dropped` and `sampled_out` never reach the replay record. They mean the router chose not to send the shadow, so they carry no signal about the candidate model and are visible only in metrics and logs.
 
 ### Replay and audit capture
 
-Completed and failed shadows append one outcome to the primary request's replay record with `source: shadow_dispatch`, `target: model`, `target_ref: <shadow model>`, the verdict, and the reason. The outcome metadata carries primary and shadow request identity, primary and shadow model and backend, decision and recipe, sample rate, enqueue, start, and finish timestamps, queue wait and latency, attempts, status code, response size, stop reason, token counts, and a SHA-256 of the shadow text. Outcomes are append-only.
+Each completed or failed candidate call appends one outcome to the primary request's replay record with `source: shadow_dispatch`, `target: model`, `target_ref: <shadow model>`, the verdict, and the reason. The outcome metadata carries primary and shadow request identity, primary and shadow model and backend, decision and recipe, sample rate, enqueue, start, and finish timestamps, queue wait and latency, attempts, status code, response size, stop reason, token counts, and a SHA-256 of the shadow text. Outcomes are append-only.
 
-Replay redaction applies to shadow outcomes the same way it applies to the rest of the record: viewers without content rights see the routing and timing fields but not `target_ref`, `reason`, or `metadata`. Keep `capture_response_body` off unless the replay store and its readers are cleared for prompt-level content. See the fragment:
+Replay redaction applies to shadow outcomes the same way it applies to the rest of the record: viewers without content rights see the routing and timing fields but not `target_ref`, `reason`, or `metadata`. Enable `capture.enabled` only when you need to store response text. See the fragment:
 [`config/fragments/plugin/shadow-dispatch/sampled.yaml`](https://github.com/vllm-project/semantic-router/blob/main/config/fragments/plugin/shadow-dispatch/sampled.yaml).
 
 ### Export a comparison dataset
 
-Captured outcomes become a comparison dataset through `GET /api/v1/observability/replays/dataset`. The endpoint reads the records the usual replay filters select and answers with a versioned manifest of the primary and shadow arms for each input.
+Captured outcomes become a comparison dataset through `GET /api/v1/observability/replays/dataset`. The endpoint reads the records the usual replay filters select and answers with a versioned manifest of the primary and candidate outputs for each input.
 
 A manifest is identified by its own digest, so the export takes the split plan as part of the request: `seed` fixes split assignment and each repeated `split` is written as `name:weight`, for example `?seed=2026-q3&split=train:8&split=eval:2`. The same records under the same seed and splits rebuild the same manifest, including the split every example lands in, so adding later observations never moves an example that was already placed.
 
@@ -128,7 +134,7 @@ curl -H "Authorization: Bearer $ROUTER_MANAGEMENT_TOKEN" \
   "$ROUTER_MANAGEMENT_URL/api/v1/observability/replays/dataset/judge-tasks?recipe=vault&seed=2026-q3&split=train:8&split=eval:2&blinding_key=$JUDGE_KEY"
 ```
 
-A pair is built only when the request and both answers hash back to the digests in the manifest. A stored request names the model the router sent it to, so the input digest covers the request body without its top-level model field (`Model` in the recorded request, `model` in a client body), which is also the `input` a judge reads, and each task carries that `input_digest`. This changed input identity, deduplication and splits, so the manifest is `shadow-dataset.v2` and the tasks are `shadow-judge-tasks.v2`. A `shadow-dataset.v1` manifest is refused. The shadow text comes from the captured excerpt, so the shadow decision needs `capture_response_body` on and a `max_capture_bytes` large enough for whole answers. An excerpt that was cut, or a primary answer a response-stage plugin rewrote before it was stored, is left out and counted as `arm_text_digest_mismatch`, and a pair with no text at all as `arm_text_missing`. A request that does not match its digest is counted as `input_text_digest_mismatch`, and a missing one as `input_text_missing`. An answer that names its own model is marked `names_own_model`, since no label can blind a judge to that.
+A pair is built only when the request and both answers hash back to the digests in the manifest. A stored request names the model the router sent it to, so the input digest covers the request body without its top-level model field (`Model` in the recorded request, `model` in a client body), which is also the `input` a judge reads, and each task carries that `input_digest`. This changed input identity, deduplication and splits, so the manifest is `shadow-dataset.v2` and the tasks are `shadow-judge-tasks.v2`. A `shadow-dataset.v1` manifest is refused. The shadow text comes from the captured excerpt, so the shadow decision needs `capture.enabled` on and a `capture.max_bytes` large enough for every candidate’s share to hold a whole answer. An excerpt that was cut, or a primary answer a response-stage plugin rewrote before it was stored, is left out and counted as `arm_text_digest_mismatch`, and a pair with no text at all as `arm_text_missing`. A request that does not match its digest is counted as `input_text_digest_mismatch`, and a missing one as `input_text_missing`. An answer that names its own model is marked `names_own_model`, since no label can blind a judge to that.
 
 The tasks carry prompt and answer text, so the route needs `replay.detail` and refuses a caller without it rather than redacting the tasks. The judge runs outside the router.
 

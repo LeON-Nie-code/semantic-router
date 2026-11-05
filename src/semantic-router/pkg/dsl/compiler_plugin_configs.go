@@ -269,41 +269,17 @@ func (c *Compiler) compileMemoryPluginConfig(fields map[string]Value) config.Mem
 }
 
 func (c *Compiler) compileShadowDispatchPluginConfig(fields map[string]Value) config.ShadowDispatchPluginConfig {
-	cfg := config.ShadowDispatchPluginConfig{}
-	if v, ok := getBoolField(fields, "enabled"); ok {
-		cfg.Enabled = v
+	var cfg config.ShadowDispatchPluginConfig
+	payload, err := config.NewStructuredPayload(fieldsToMap(fields))
+	if err == nil {
+		err = payload.DecodeIntoStrict(&cfg)
 	}
-	if v, ok := getStringField(fields, "model"); ok {
-		cfg.Model = v
+	if err == nil {
+		err = cfg.Validate()
 	}
-	if v, ok := getFloat64Field(fields, "sample_rate"); ok {
-		cfg.SampleRate = &v
+	if err != nil {
+		c.addError(Position{}, "invalid shadow_dispatch configuration: %v", err)
 	}
-	if v, ok := getIntField(fields, "max_concurrency"); ok {
-		cfg.MaxConcurrency = v
-	}
-	if v, ok := getIntField(fields, "max_queue_depth"); ok {
-		cfg.MaxQueueDepth = v
-	}
-	if v, ok := getIntField(fields, "timeout_seconds"); ok {
-		cfg.TimeoutSeconds = v
-	}
-	if v, ok := getIntField(fields, "max_response_bytes"); ok {
-		cfg.MaxResponseBytes = v
-	}
-	if v, ok := getIntField(fields, "max_retries"); ok {
-		cfg.MaxRetries = v
-	}
-	if v, ok := getBoolField(fields, "capture_response_body"); ok {
-		cfg.CaptureResponseBody = v
-	}
-	if v, ok := getIntField(fields, "max_capture_bytes"); ok {
-		cfg.MaxCaptureBytes = v
-	}
-	if v, ok := getBoolField(fields, "tls_skip_verify"); ok {
-		cfg.TLSSkipVerify = v
-	}
-	cfg.ForwardHeaders = stringArrayValue(fields["forward_headers"])
 	return cfg
 }
 

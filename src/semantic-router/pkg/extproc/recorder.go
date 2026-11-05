@@ -472,6 +472,14 @@ func (r *OpenAIRouter) finalizeRouterReplay(
 	state string,
 	reason string,
 ) {
+	if ctx != nil {
+		if state == routerreplay.LifecycleCompleted {
+			ctx.shadowPrimaryComplete = true
+		} else if !ctx.shadowPrimaryComplete && ctx.ShadowCancel != nil {
+			ctx.ShadowCancel()
+		}
+	}
+
 	if ctx == nil || ctx.RouterReplayID == "" {
 		return
 	}
