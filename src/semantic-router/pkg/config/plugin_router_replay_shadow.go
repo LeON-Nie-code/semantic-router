@@ -196,6 +196,9 @@ func (c *RouterReplayShadowConfig) Validate() error {
 	if err != nil || duration <= 0 || duration > maxShadowTimeout || len(effective.Execution.Timeout) > maxShadowTimeoutLength || !shadowDurationPattern.MatchString(effective.Execution.Timeout) {
 		return fmt.Errorf("execution.timeout must be a positive duration at most 5m")
 	}
+	if cost := c.Budget.MaxEstimatedCost; cost != nil && (*cost <= 0 || math.IsNaN(*cost) || math.IsInf(*cost, 0)) {
+		return fmt.Errorf("budget.max_estimated_cost must be finite and positive")
+	}
 	if *effective.Budget.MaxResponseBytes < 2*len(c.Models) {
 		return fmt.Errorf("budget.max_response_bytes must allocate at least two bytes to each model")
 	}

@@ -524,3 +524,81 @@ func TestShadowGroupUsesReplayPolicyForUnmatchedRequests(t *testing.T) {
 		})
 	}
 }
+
+func TestShadowGroupSpendBudget(t *testing.T) {
+	for _, tc := range []struct {
+		name           string
+		limit          float64
+		output         int64
+		calls          int
+		reason         string
+		source         string
+		secondCurrency string
+	}{
+		{"combined estimate exceeds limit", 170, 100, 0, "budget_exhausted", "", "USD"},
+		{"both candidates fit", 500, 100, 2, "completed", "usage", "USD"},
+		{"no output bound", 500, 0, 0, "budget_unbounded_output", "", "USD"},
+		{"usage missing after dispatch", 500, 100, 2, "completed", "estimate", "USD"},
+		{"no budget and no output bound", 0, 0, 2, "completed", "", "USD"},
+		{"second candidate has no price", 500, 100, 0, "budget_unpriced", "", ""},
+		{"second candidate has a different currency", 500, 100, 0, "budget_unpriced", "", "EUR"},
+	} {
+		t.Run(tc.name, func(t *testing.T) {
+			backend := newShadowTestBackend(t)
+			if tc.source == "estimate" || tc.source == "usage" {
+				backend.setHandler(func(w http.ResponseWriter, _ []byte) {
+					response := `{"id":"shadow","object":"chat.completion","choices":[{"index":0,"message":{"role":"assistant","content":"ok"},"finish_reason":"stop"}]`
+					if tc.source == "usage" {
+						response += `,"usage":{"prompt_tokens":3,"completion_tokens":4,"total_tokens":7,"prompt_tokens_details":{"cached_tokens":2}}`
+					}
+					_, _ = io.WriteString(w, response+"}")
+				})
+			}
+			router, primary := newShadowTestRouter(t, backend)
+			model := router.Config.ModelConfig[shadowTestModel]
+			model.Pricing = config.ModelPricing{Currency: "USD", PromptPer1M: 1e6, CachedInputPer1M: 5e5, CompletionPer1M: 1e6}
+			router.Config.ModelConfig[shadowTestModel] = model
+			model.Pricing.Currency = tc.secondCurrency
+			if tc.secondCurrency == "" {
+				model.Pricing = config.ModelPricing{}
+			}
+			router.Config.ModelConfig["second"] = model
+			cfg := shadowTestPluginConfig()
+			cfg.Models = append(cfg.Models, "second")
+			if tc.limit > 0 {
+				cfg.Budget.MaxEstimatedCost = &tc.limit
+			}
+
+			setLimit := func(ctx *RequestContext) {
+				if tc.output > 0 {
+					ctx.SemanticRequest.Sampling.MaxOutputTokens = llmprotocol.Int64(tc.output)
+				}
+			}
+			baseline := runShadowRequest(t, router, primary, nil, setLimit)
+			run := runShadowRequest(t, router, primary, cfg, setLimit)
+			waitForShadow(t, router)
+			if got := backend.requestCount(); got != tc.calls || !bytes.Equal(run.body, baseline.body) {
+				t.Fatalf("shadow requests = %d, want %d, and primary must be unchanged", got, tc.calls)
+			}
+			outcomes := shadowOutcomes(t, run)
+			if len(outcomes) != 2 {
+				t.Fatalf("outcomes = %v, want one per candidate", outcomes)
+			}
+			for _, outcome := range outcomes {
+				if outcome.Reason != tc.reason || outcome.Metadata["budget_cost_source"] != tc.source {
+					t.Fatalf("unexpected outcome: %+v", outcome)
+				}
+				switch tc.source {
+				case "usage":
+					if outcome.Metadata["budget_accounted_cost"] != "6" || outcome.Metadata["estimated_cost"] != "6" {
+						t.Fatalf("unexpected cost of cached input: %+v", outcome.Metadata)
+					}
+				case "estimate":
+					if outcome.Metadata["budget_accounted_cost"] != outcome.Metadata["budget_estimated_cost"] {
+						t.Fatalf("missing usage did not account for the estimate: %+v", outcome.Metadata)
+					}
+				}
+			}
+		})
+	}
+}

@@ -43,9 +43,19 @@ type preparedShadowCall struct {
 
 func (d *shadowDispatcher) call(ctx context.Context, job *shadowJob) shadowResult {
 	result := shadowResult{startedAt: d.now()}
-	prepared, reason, err := d.prepareShadowCall(job)
-	if err != nil {
-		return d.failShadow(result, reason, err)
+	if reason, done := shadowContextFailure(ctx, d.ctx); done {
+		return d.failShadow(result, reason, ctx.Err())
+	}
+	var prepared *preparedShadowCall
+	if job.spend != nil {
+		prepared = job.spend.prepared
+	} else {
+		var reason string
+		var err error
+		prepared, reason, err = d.prepareShadowCall(job)
+		if err != nil {
+			return d.failShadow(result, reason, err)
+		}
 	}
 	result.shadowBackend = prepared.target.backendName
 	operation := connector.Operation{
@@ -59,6 +69,9 @@ func (d *shadowDispatcher) call(ctx context.Context, job *shadowJob) shadowResul
 		Body:    prepared.body,
 		Headers: shadowCallHeaders(job, prepared.target),
 	})
+	if job.spend != nil {
+		job.spend.dispatched = shadowCallMayHaveBeenDispatched(err)
+	}
 	if err != nil {
 		reason, attempts, status := shadowConnectorFailure(ctx, d.ctx, err)
 		result.attempts = attempts
@@ -75,6 +88,9 @@ func (d *shadowDispatcher) call(ctx context.Context, job *shadowJob) shadowResul
 	result.stopReason = string(decoded.Response.StopReason)
 	result.inputTokens = shadowTokenCount(decoded.Response.Usage.InputTotal)
 	result.outputTokens = shadowTokenCount(decoded.Response.Usage.OutputTotal)
+	if job.spend != nil {
+		job.spend.usage = responseUsageFromSemanticUsage(decoded.Response.Usage)
+	}
 	result.inputKnown = decoded.Response.Usage.InputTotal.Value != nil
 	result.outputKnown = decoded.Response.Usage.OutputTotal.Value != nil
 	result.text = semanticResponseText(decoded.Response)
@@ -178,6 +194,20 @@ func shadowCallHeaders(job *shadowJob, target *shadowTarget) map[string]string {
 	}
 	result[headers.RequestID] = job.shadowRequestID
 	return result
+}
+
+// A transport error may come back after the backend has started generating.
+func shadowCallMayHaveBeenDispatched(err error) bool {
+	var failure *connector.Error
+	if !errors.As(err, &failure) {
+		return true
+	}
+	switch failure.Kind {
+	case connector.KindRequest, connector.KindAuthorization, connector.KindBudget:
+		return false
+	default:
+		return failure.Attempt > 0
+	}
 }
 
 // shadowConnectorFailure maps a connector error onto the shadow reason

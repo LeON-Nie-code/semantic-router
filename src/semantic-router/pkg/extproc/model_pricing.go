@@ -4,6 +4,7 @@ import (
 	"time"
 
 	"github.com/vllm-project/semantic-router/src/semantic-router/pkg/config"
+	"github.com/vllm-project/semantic-router/src/semantic-router/pkg/llmprotocol"
 	"github.com/vllm-project/semantic-router/src/semantic-router/pkg/modelpricing"
 )
 
@@ -72,4 +73,10 @@ func effectiveCacheWriteRate(pricing config.ModelPricing) float64 {
 
 func effectiveCacheWrite1hRate(pricing config.ModelPricing) float64 {
 	return modelPricingRates(pricing).EffectiveCacheWrite1hPer1M()
+}
+
+func estimateDispatchCost(request *llmprotocol.Request, output int64, pricing config.ModelPricing) float64 {
+	inputRate := max(pricing.PromptPer1M, effectiveCacheWriteRate(pricing), effectiveCacheWrite1hRate(pricing))
+	input := llmprotocol.EstimateInput(request).Tokens
+	return (float64(input)*inputRate + float64(output)*max(pricing.CompletionPer1M, 0)) / 1e6
 }
