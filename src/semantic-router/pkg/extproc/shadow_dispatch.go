@@ -59,6 +59,9 @@ const (
 	shadowReasonRedirectRejected     = "redirect_rejected"
 	shadowReasonResponseTooLarge     = "response_too_large"
 	shadowReasonMalformedResponse    = "malformed_response"
+	shadowReasonBudgetExhausted      = "budget_exhausted"
+	shadowReasonBudgetUnpriced       = "budget_unpriced"
+	shadowReasonBudgetUnbounded      = "budget_unbounded_output"
 
 	// shadowReasonBackendLacksCapability shares the plugin gate's typed reason.
 	shadowReasonBackendLacksCapability = string(pluginruntime.SkipBackendLacksCapability)
@@ -104,6 +107,7 @@ type shadowRequestEncoder func(request llmprotocol.Request, target *shadowTarget
 // worker never reads mutable request state after the primary path moves on.
 type shadowJob struct {
 	cfg             config.RouterReplayShadowConfig
+	spend           *shadowSpend
 	model           string
 	context         context.Context
 	responseLimit   int
@@ -523,6 +527,13 @@ func (d *shadowDispatcher) enqueueGroup(key string, jobs []*shadowJob, cancel co
 			}
 		}
 		defer func() { <-lane.groups }()
+		if limit := first.cfg.Budget.MaxEstimatedCost; limit != nil {
+			hold := d.reserveShadowGroup(jobs, *limit)
+			if hold == nil {
+				return
+			}
+			defer settleShadowGroup(hold, jobs)
+		}
 		var workers sync.WaitGroup
 		for _, job := range jobs {
 			workers.Add(1)
@@ -572,7 +583,11 @@ func (d *shadowDispatcher) execute(job *shadowJob) {
 	}
 	metrics.ShadowDispatchInflight.WithLabelValues(job.decision).Inc()
 	defer metrics.ShadowDispatchInflight.WithLabelValues(job.decision).Dec()
-	d.record(job, d.call(job.context, job))
+	result := d.call(job.context, job)
+	if job.spend != nil {
+		job.spend.settle(result)
+	}
+	d.record(job, result)
 }
 
 // record persists the observation. Metrics always fire; the replay outcome
@@ -655,6 +670,12 @@ func shadowOutcomeMetadata(job *shadowJob, result shadowResult, latency time.Dur
 	}
 	if result.err != "" {
 		metadata["error"] = result.err
+	}
+	if spend := job.spend; spend != nil {
+		metadata["budget_reserved_cost"] = strconv.FormatFloat(spend.estimate, 'f', -1, 64)
+		metadata["budget_settled_cost"] = strconv.FormatFloat(spend.charged, 'f', -1, 64)
+		metadata["budget_settlement"] = spend.settlement
+		metadata["budget_currency"] = spend.currency
 	}
 	if result.verdict != shadowVerdictCompleted {
 		return metadata

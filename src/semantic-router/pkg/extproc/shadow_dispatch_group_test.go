@@ -524,3 +524,67 @@ func TestShadowGroupUsesReplayPolicyForUnmatchedRequests(t *testing.T) {
 		})
 	}
 }
+
+func TestShadowGroupSpendBudget(t *testing.T) {
+	for _, tc := range []struct {
+		name       string
+		limit      float64
+		output     int64
+		calls      int
+		reason     string
+		settlement string
+	}{
+		{"combined estimate exceeds limit", 170, 100, 0, "budget_exhausted", ""},
+		{"both candidates fit", 500, 100, 2, "completed", "usage"},
+		{"no output bound", 500, 0, 0, "budget_unbounded_output", ""},
+		{"usage missing after dispatch", 500, 100, 2, "completed", "estimate"},
+	} {
+		t.Run(tc.name, func(t *testing.T) {
+			backend := newShadowTestBackend(t)
+			if tc.settlement == "estimate" {
+				backend.setHandler(func(w http.ResponseWriter, _ []byte) {
+					_, _ = io.WriteString(w, `{"id":"shadow","object":"chat.completion","choices":[{"index":0,"message":{"role":"assistant","content":"ok"},"finish_reason":"stop"}]}`)
+				})
+			}
+			router, primary := newShadowTestRouter(t, backend)
+			model := router.Config.ModelConfig[shadowTestModel]
+			model.Pricing = config.ModelPricing{Currency: "USD", PromptPer1M: 1e6, CompletionPer1M: 1e6}
+			router.Config.ModelConfig[shadowTestModel] = model
+			router.Config.ModelConfig["second"] = model
+			cfg := shadowTestPluginConfig()
+			cfg.Models = append(cfg.Models, "second")
+			cfg.Budget.MaxEstimatedCost = &tc.limit
+
+			setLimit := func(ctx *RequestContext) {
+				if tc.output > 0 {
+					ctx.SemanticRequest.Sampling.MaxOutputTokens = llmprotocol.Int64(tc.output)
+				}
+			}
+			baseline := runShadowRequest(t, router, primary, nil, setLimit)
+			run := runShadowRequest(t, router, primary, cfg, setLimit)
+			waitForShadow(t, router)
+			if got := backend.requestCount(); got != tc.calls || !bytes.Equal(run.body, baseline.body) {
+				t.Fatalf("shadow requests = %d, want %d, and primary must be unchanged", got, tc.calls)
+			}
+			outcomes := shadowOutcomes(t, run)
+			if len(outcomes) != 2 {
+				t.Fatalf("outcomes = %v, want one per candidate", outcomes)
+			}
+			for _, outcome := range outcomes {
+				if outcome.Reason != tc.reason || outcome.Metadata["budget_settlement"] != tc.settlement {
+					t.Fatalf("unexpected outcome: %+v", outcome)
+				}
+				switch tc.settlement {
+				case "usage":
+					if outcome.Metadata["budget_settled_cost"] != "7" {
+						t.Fatalf("unexpected settlement: %+v", outcome.Metadata)
+					}
+				case "estimate":
+					if outcome.Metadata["budget_settled_cost"] != outcome.Metadata["budget_reserved_cost"] {
+						t.Fatalf("did not settle the reserved estimate: %+v", outcome.Metadata)
+					}
+				}
+			}
+		})
+	}
+}

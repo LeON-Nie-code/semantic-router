@@ -290,9 +290,12 @@ plugins:
 | `execution.max_queue_size` | `8` | 同一配方和决策等待执行的请求组数，由所有请求共享。按组计数，不按候选模型计数。 |
 | `execution.timeout` | `30s` | 整组共享的截止时间，包括排队等待和所有候选调用。必须为正时长，最多 `5m`。 |
 | `budget.max_response_bytes` | `N × 1048576` | 整组的响应字节预算，在派发前分配给有效候选。最小值为 `2 × N`：每个候选预留一个字节，用于检测超大响应。 |
+| `budget.max_estimated_cost` | — | 可选。单次抽样的 Shadow 候选组最高预估费用，币种使用 `global.services.budgets.currency`（默认 USD）。 |
 | `capture.enabled` | `false` | 仅在 `prompt_capture: raw` 下保存候选文本的有上限摘录。关闭时只保留大小、token 用量和 SHA-256。 |
 | `forward_headers` | `[]` | 允许复制的决策请求头，不区分大小写。凭据头不会转发。 |
 | `capture.max_bytes` | `N × 4096` | 整组的摘录字节上限，分配给有效候选。 |
+
+Router 在派发前按各候选编码后的输入和显式输出上限估价，并预留整组费用。估价超限、缺少对应币种的价格或无法确定输出上限时，跳过整组并在 Replay 记录原因。已派发的候选有用量时按用量结算，否则按估价结算。该上限约束派发时的预估费用，实际收费可能有差异。这份额度只适用于 Shadow 调用。
 
 旧的扁平影子字段会被拒绝，请使用上面的嵌套结构。
 

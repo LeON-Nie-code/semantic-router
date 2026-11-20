@@ -554,9 +554,12 @@ Here `N` is the number of configured models. All integer bounds must be positive
 | `execution.max_queue_size` | `8` | Pending request groups for the same recipe and decision, shared across requests. Counts groups, not candidates. |
 | `execution.timeout` | `30s` | Shared group deadline, including queue wait and all candidate calls. Positive duration, at most `5m`. |
 | `budget.max_response_bytes` | `N × 1048576` | Aggregate response byte budget, divided before dispatch among effective candidates. Minimum `2 × N`: each candidate reserves one byte to detect an oversized response. |
+| `budget.max_estimated_cost` | — | Optional. Maximum estimated spend for the sampled Shadow group, in `global.services.budgets.currency` (USD by default). |
 | `capture.enabled` | `false` | Store bounded excerpts of candidate text in replay outcomes under `prompt_capture: raw`. Otherwise only sizes, token usage, and a SHA-256 are kept. |
 | `forward_headers` | `[]` | Decision header mutations to copy, matched case-insensitively. Credential headers are excluded. |
 | `capture.max_bytes` | `N × 4096` | Aggregate excerpt byte limit, divided among effective candidates. |
+
+Before sending any candidate, the Router estimates the cost of its encoded input and its explicit output limit, then reserves the group total. It skips the group if the estimate exceeds the limit, a price is unavailable in the budget currency, or an output bound cannot be established. Replay records the reason. For each dispatched candidate it uses reported usage when available and otherwise settles at the estimate. The limit applies to the dispatch estimate; actual charges can differ. This budget applies only to Shadow calls.
 
 The old flat shadow fields are rejected; use the nested structure above.
 
