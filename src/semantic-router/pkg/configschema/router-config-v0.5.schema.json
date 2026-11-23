@@ -6671,6 +6671,17 @@
             }
           ]
         },
+        "max_estimated_tokens": {
+          "oneOf": [
+            {
+              "type": "integer",
+              "minimum": 1
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
         "max_estimated_cost": {
           "oneOf": [
             {

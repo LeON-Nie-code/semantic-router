@@ -86,6 +86,7 @@ class TestRouterReplayShadowConfig:
             ("execution", "max_concurrency"),
             ("execution", "max_queue_size"),
             ("budget", "max_response_bytes"),
+            ("budget", "max_estimated_tokens"),
             ("capture", "max_bytes"),
         ],
     )
