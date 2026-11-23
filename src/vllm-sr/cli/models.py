@@ -1469,6 +1469,11 @@ class RouterReplayShadowBudgetConfig(BaseModel):
         description="Default: max(1, len(models)) * 1048576 total response bytes",
     )
 
+    max_estimated_tokens: Optional[_ShadowPositiveInt] = Field(
+        default=None,
+        description="Maximum total estimated input and reserved output tokens per sampled Shadow group",
+    )
+
     max_estimated_cost: Optional[float] = Field(
         default=None,
         strict=True,

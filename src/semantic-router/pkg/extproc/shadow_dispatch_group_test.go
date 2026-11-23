@@ -621,6 +621,58 @@ func TestShadowGroupSpendBudget(t *testing.T) {
 	}
 }
 
+func TestShadowGroupTokenBudget(t *testing.T) {
+	const outputLimit = 100
+	input := llmprotocol.EstimateInput(testNeutralRequest("virtual", "please shadow this prompt")).Tokens
+	total := 2 * (input + outputLimit)
+	for _, tc := range []struct {
+		name       string
+		tokenLimit int
+		costLimit  float64
+		calls      int
+		reason     string
+	}{
+		{"group exceeds token limit without pricing", total - 1, 0, 0, "budget_tokens_exhausted"},
+		{"group fits token limit without pricing", total, 0, 2, "completed"},
+		{"group exceeds token limit within cost limit", total - 1, 200, 0, "budget_tokens_exhausted"},
+		{"group exceeds cost limit within token limit", total, 199, 0, "budget_exhausted"},
+	} {
+		t.Run(tc.name, func(t *testing.T) {
+			backend := newShadowTestBackend(t)
+			router, primary := newShadowTestRouter(t, backend)
+			model := router.Config.ModelConfig[shadowTestModel]
+			if tc.costLimit > 0 {
+				model.Pricing = config.ModelPricing{Currency: "USD", CompletionPer1M: 1e6}
+			}
+			router.Config.ModelConfig[shadowTestModel] = model
+			router.Config.ModelConfig["second"] = model
+			cfg := shadowTestPluginConfig()
+			cfg.Models = append(cfg.Models, "second")
+			cfg.Budget.MaxEstimatedTokens = &tc.tokenLimit
+			if tc.costLimit > 0 {
+				cfg.Budget.MaxEstimatedCost = &tc.costLimit
+			}
+
+			run := runShadowRequest(t, router, primary, cfg, func(ctx *RequestContext) {
+				ctx.SemanticRequest.Sampling.MaxOutputTokens = llmprotocol.Int64(outputLimit)
+			})
+			waitForShadow(t, router)
+			if got := backend.requestCount(); got != tc.calls {
+				t.Fatalf("shadow calls = %d, want %d", got, tc.calls)
+			}
+			outcomes := shadowOutcomes(t, run)
+			if len(outcomes) != 2 {
+				t.Fatalf("shadow outcomes = %d, want 2", len(outcomes))
+			}
+			for _, outcome := range outcomes {
+				if outcome.Reason != tc.reason {
+					t.Fatalf("shadow reason = %q, want %q", outcome.Reason, tc.reason)
+				}
+			}
+		})
+	}
+}
+
 func TestShadowSpendEstimatesOutputTokens(t *testing.T) {
 	for _, tc := range []struct {
 		name          string
