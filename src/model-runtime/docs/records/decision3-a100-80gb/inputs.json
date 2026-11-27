@@ -1,0 +1,779 @@
+{
+  "panel": [
+    {
+      "body": {
+        "questions": {
+          "difficulty": {
+            "criteria": [
+              "Trivial",
+              "Moderate",
+              "Hard",
+              "Expert"
+            ],
+            "instructions": "How difficult is this task?",
+            "type": "score"
+          },
+          "domain": {
+            "criteria": {
+              "code": "Programming",
+              "math": "Mathematics",
+              "other": "Anything else"
+            },
+            "instructions": "Which domain is this request about?",
+            "type": "choice"
+          },
+          "reasoning": {
+            "instructions": "Does this need multi-step reasoning?",
+            "type": "noul"
+          }
+        },
+        "state": "Write a Python function that merges two sorted lists."
+      },
+      "id": "text-00"
+    },
+    {
+      "body": {
+        "questions": {
+          "difficulty": {
+            "criteria": [
+              "Trivial",
+              "Moderate",
+              "Hard",
+              "Expert"
+            ],
+            "instructions": "How difficult is this task?",
+            "type": "score"
+          },
+          "domain": {
+            "criteria": {
+              "code": "Programming",
+              "math": "Mathematics",
+              "other": "Anything else"
+            },
+            "instructions": "Which domain is this request about?",
+            "type": "choice"
+          },
+          "reasoning": {
+            "instructions": "Does this need multi-step reasoning?",
+            "type": "noul"
+          }
+        },
+        "state": "Prove that the square root of two is irrational."
+      },
+      "id": "text-01"
+    },
+    {
+      "body": {
+        "questions": {
+          "difficulty": {
+            "criteria": [
+              "Trivial",
+              "Moderate",
+              "Hard",
+              "Expert"
+            ],
+            "instructions": "How difficult is this task?",
+            "type": "score"
+          },
+          "domain": {
+            "criteria": {
+              "code": "Programming",
+              "math": "Mathematics",
+              "other": "Anything else"
+            },
+            "instructions": "Which domain is this request about?",
+            "type": "choice"
+          },
+          "reasoning": {
+            "instructions": "Does this need multi-step reasoning?",
+            "type": "noul"
+          }
+        },
+        "state": "Hello! How are you today?"
+      },
+      "id": "text-02"
+    },
+    {
+      "body": {
+        "questions": {
+          "difficulty": {
+            "criteria": [
+              "Trivial",
+              "Moderate",
+              "Hard",
+              "Expert"
+            ],
+            "instructions": "How difficult is this task?",
+            "type": "score"
+          },
+          "domain": {
+            "criteria": {
+              "code": "Programming",
+              "math": "Mathematics",
+              "other": "Anything else"
+            },
+            "instructions": "Which domain is this request about?",
+            "type": "choice"
+          },
+          "reasoning": {
+            "instructions": "Does this need multi-step reasoning?",
+            "type": "noul"
+          }
+        },
+        "state": "请解释数据库索引，并举一个 Python 查询的例子。"
+      },
+      "id": "text-03"
+    },
+    {
+      "body": {
+        "questions": {
+          "difficulty": {
+            "criteria": [
+              "Trivial",
+              "Moderate",
+              "Hard",
+              "Expert"
+            ],
+            "instructions": "How difficult is this task?",
+            "type": "score"
+          },
+          "domain": {
+            "criteria": {
+              "code": "Programming",
+              "math": "Mathematics",
+              "other": "Anything else"
+            },
+            "instructions": "Which domain is this request about?",
+            "type": "choice"
+          },
+          "reasoning": {
+            "instructions": "Does this need multi-step reasoning?",
+            "type": "noul"
+          }
+        },
+        "state": "Compare the time complexity of quicksort and mergesort."
+      },
+      "id": "text-04"
+    },
+    {
+      "body": {
+        "questions": {
+          "difficulty": {
+            "criteria": [
+              "Trivial",
+              "Moderate",
+              "Hard",
+              "Expert"
+            ],
+            "instructions": "How difficult is this task?",
+            "type": "score"
+          },
+          "domain": {
+            "criteria": {
+              "code": "Programming",
+              "math": "Mathematics",
+              "other": "Anything else"
+            },
+            "instructions": "Which domain is this request about?",
+            "type": "choice"
+          },
+          "reasoning": {
+            "instructions": "Does this need multi-step reasoning?",
+            "type": "noul"
+          }
+        },
+        "state": "Explain how photosynthesis converts sunlight into chemical energy."
+      },
+      "id": "text-05"
+    },
+    {
+      "body": {
+        "questions": {
+          "difficulty": {
+            "criteria": [
+              "Trivial",
+              "Moderate",
+              "Hard",
+              "Expert"
+            ],
+            "instructions": "How difficult is this task?",
+            "type": "score"
+          },
+          "domain": {
+            "criteria": {
+              "code": "Programming",
+              "math": "Mathematics",
+              "other": "Anything else"
+            },
+            "instructions": "Which domain is this request about?",
+            "type": "choice"
+          },
+          "reasoning": {
+            "instructions": "Does this need multi-step reasoning?",
+            "type": "noul"
+          }
+        },
+        "state": "What is 17 multiplied by 23? Show your reasoning."
+      },
+      "id": "text-06"
+    },
+    {
+      "body": {
+        "questions": {
+          "difficulty": {
+            "criteria": [
+              "Trivial",
+              "Moderate",
+              "Hard",
+              "Expert"
+            ],
+            "instructions": "How difficult is this task?",
+            "type": "score"
+          },
+          "domain": {
+            "criteria": {
+              "code": "Programming",
+              "math": "Mathematics",
+              "other": "Anything else"
+            },
+            "instructions": "Which domain is this request about?",
+            "type": "choice"
+          },
+          "reasoning": {
+            "instructions": "Does this need multi-step reasoning?",
+            "type": "noul"
+          }
+        },
+        "state": "Summarize this document and identify its main assumptions. "
+      },
+      "id": "text-07"
+    },
+    {
+      "body": {
+        "questions": {
+          "difficulty": {
+            "criteria": [
+              "Trivial",
+              "Moderate",
+              "Hard",
+              "Expert"
+            ],
+            "instructions": "How difficult is this task?",
+            "type": "score"
+          },
+          "domain": {
+            "criteria": {
+              "code": "Programming",
+              "math": "Mathematics",
+              "other": "Anything else"
+            },
+            "instructions": "Which domain is this request about?",
+            "type": "choice"
+          },
+          "reasoning": {
+            "instructions": "Does this need multi-step reasoning?",
+            "type": "noul"
+          }
+        },
+        "state": "Write a Python function that merges two sorted lists.Write a Python function that merges two sorted lists.Write a Python function that merges two sorted lists.Write a Python function that merges two sorted lists."
+      },
+      "id": "text-08"
+    },
+    {
+      "body": {
+        "questions": {
+          "difficulty": {
+            "criteria": [
+              "Trivial",
+              "Moderate",
+              "Hard",
+              "Expert"
+            ],
+            "instructions": "How difficult is this task?",
+            "type": "score"
+          },
+          "domain": {
+            "criteria": {
+              "code": "Programming",
+              "math": "Mathematics",
+              "other": "Anything else"
+            },
+            "instructions": "Which domain is this request about?",
+            "type": "choice"
+          },
+          "reasoning": {
+            "instructions": "Does this need multi-step reasoning?",
+            "type": "noul"
+          }
+        },
+        "state": "Prove that the square root of two is irrational.Prove that the square root of two is irrational.Prove that the square root of two is irrational.Prove that the square root of two is irrational."
+      },
+      "id": "text-09"
+    },
+    {
+      "body": {
+        "questions": {
+          "difficulty": {
+            "criteria": [
+              "Trivial",
+              "Moderate",
+              "Hard",
+              "Expert"
+            ],
+            "instructions": "How difficult is this task?",
+            "type": "score"
+          },
+          "domain": {
+            "criteria": {
+              "code": "Programming",
+              "math": "Mathematics",
+              "other": "Anything else"
+            },
+            "instructions": "Which domain is this request about?",
+            "type": "choice"
+          },
+          "reasoning": {
+            "instructions": "Does this need multi-step reasoning?",
+            "type": "noul"
+          }
+        },
+        "state": "Hello! How are you today?Hello! How are you today?Hello! How are you today?Hello! How are you today?"
+      },
+      "id": "text-10"
+    },
+    {
+      "body": {
+        "questions": {
+          "difficulty": {
+            "criteria": [
+              "Trivial",
+              "Moderate",
+              "Hard",
+              "Expert"
+            ],
+            "instructions": "How difficult is this task?",
+            "type": "score"
+          },
+          "domain": {
+            "criteria": {
+              "code": "Programming",
+              "math": "Mathematics",
+              "other": "Anything else"
+            },
+            "instructions": "Which domain is this request about?",
+            "type": "choice"
+          },
+          "reasoning": {
+            "instructions": "Does this need multi-step reasoning?",
+            "type": "noul"
+          }
+        },
+        "state": "请解释数据库索引，并举一个 Python 查询的例子。请解释数据库索引，并举一个 Python 查询的例子。请解释数据库索引，并举一个 Python 查询的例子。请解释数据库索引，并举一个 Python 查询的例子。"
+      },
+      "id": "text-11"
+    },
+    {
+      "body": {
+        "questions": {
+          "difficulty": {
+            "criteria": [
+              "Trivial",
+              "Moderate",
+              "Hard",
+              "Expert"
+            ],
+            "instructions": "How difficult is this task?",
+            "type": "score"
+          },
+          "domain": {
+            "criteria": {
+              "code": "Programming",
+              "math": "Mathematics",
+              "other": "Anything else"
+            },
+            "instructions": "Which domain is this request about?",
+            "type": "choice"
+          },
+          "reasoning": {
+            "instructions": "Does this need multi-step reasoning?",
+            "type": "noul"
+          }
+        },
+        "state": "Compare the time complexity of quicksort and mergesort.Compare the time complexity of quicksort and mergesort.Compare the time complexity of quicksort and mergesort.Compare the time complexity of quicksort and mergesort."
+      },
+      "id": "text-12"
+    },
+    {
+      "body": {
+        "questions": {
+          "difficulty": {
+            "criteria": [
+              "Trivial",
+              "Moderate",
+              "Hard",
+              "Expert"
+            ],
+            "instructions": "How difficult is this task?",
+            "type": "score"
+          },
+          "domain": {
+            "criteria": {
+              "code": "Programming",
+              "math": "Mathematics",
+              "other": "Anything else"
+            },
+            "instructions": "Which domain is this request about?",
+            "type": "choice"
+          },
+          "reasoning": {
+            "instructions": "Does this need multi-step reasoning?",
+            "type": "noul"
+          }
+        },
+        "state": "Explain how photosynthesis converts sunlight into chemical energy.Explain how photosynthesis converts sunlight into chemical energy.Explain how photosynthesis converts sunlight into chemical energy.Explain how photosynthesis converts sunlight into chemical energy."
+      },
+      "id": "text-13"
+    },
+    {
+      "body": {
+        "questions": {
+          "difficulty": {
+            "criteria": [
+              "Trivial",
+              "Moderate",
+              "Hard",
+              "Expert"
+            ],
+            "instructions": "How difficult is this task?",
+            "type": "score"
+          },
+          "domain": {
+            "criteria": {
+              "code": "Programming",
+              "math": "Mathematics",
+              "other": "Anything else"
+            },
+            "instructions": "Which domain is this request about?",
+            "type": "choice"
+          },
+          "reasoning": {
+            "instructions": "Does this need multi-step reasoning?",
+            "type": "noul"
+          }
+        },
+        "state": "What is 17 multiplied by 23? Show your reasoning.What is 17 multiplied by 23? Show your reasoning.What is 17 multiplied by 23? Show your reasoning.What is 17 multiplied by 23? Show your reasoning."
+      },
+      "id": "text-14"
+    },
+    {
+      "body": {
+        "questions": {
+          "difficulty": {
+            "criteria": [
+              "Trivial",
+              "Moderate",
+              "Hard",
+              "Expert"
+            ],
+            "instructions": "How difficult is this task?",
+            "type": "score"
+          },
+          "domain": {
+            "criteria": {
+              "code": "Programming",
+              "math": "Mathematics",
+              "other": "Anything else"
+            },
+            "instructions": "Which domain is this request about?",
+            "type": "choice"
+          },
+          "reasoning": {
+            "instructions": "Does this need multi-step reasoning?",
+            "type": "noul"
+          }
+        },
+        "state": "Summarize this document and identify its main assumptions. Summarize this document and identify its main assumptions. Summarize this document and identify its main assumptions. Summarize this document and identify its main assumptions. "
+      },
+      "id": "text-15"
+    },
+    {
+      "body": {
+        "questions": {
+          "difficulty": {
+            "criteria": [
+              "Trivial",
+              "Moderate",
+              "Hard",
+              "Expert"
+            ],
+            "instructions": "How difficult is this task?",
+            "type": "score"
+          },
+          "domain": {
+            "criteria": {
+              "code": "Programming",
+              "math": "Mathematics",
+              "other": "Anything else"
+            },
+            "instructions": "Which domain is this request about?",
+            "type": "choice"
+          },
+          "reasoning": {
+            "instructions": "Does this need multi-step reasoning?",
+            "type": "noul"
+          }
+        },
+        "state": "Write a Python function that merges two sorted lists.Write a Python function that merges two sorted lists.Write a Python function that merges two sorted lists.Write a Python function that merges two sorted lists.Write a Python function that merges two sorted lists.Write a Python function that merges two sorted lists.Write a Python function that merges two sorted lists.Write a Python function that merges two sorted lists.Write a Python function that merges two sorted lists.Write a Python function that merges two sorted lists.Write a Python function that merges two sorted lists.Write a Python function that merges two sorted lists."
+      },
+      "id": "text-16"
+    },
+    {
+      "body": {
+        "questions": {
+          "difficulty": {
+            "criteria": [
+              "Trivial",
+              "Moderate",
+              "Hard",
+              "Expert"
+            ],
+            "instructions": "How difficult is this task?",
+            "type": "score"
+          },
+          "domain": {
+            "criteria": {
+              "code": "Programming",
+              "math": "Mathematics",
+              "other": "Anything else"
+            },
+            "instructions": "Which domain is this request about?",
+            "type": "choice"
+          },
+          "reasoning": {
+            "instructions": "Does this need multi-step reasoning?",
+            "type": "noul"
+          }
+        },
+        "state": "Prove that the square root of two is irrational.Prove that the square root of two is irrational.Prove that the square root of two is irrational.Prove that the square root of two is irrational.Prove that the square root of two is irrational.Prove that the square root of two is irrational.Prove that the square root of two is irrational.Prove that the square root of two is irrational.Prove that the square root of two is irrational.Prove that the square root of two is irrational.Prove that the square root of two is irrational.Prove that the square root of two is irrational."
+      },
+      "id": "text-17"
+    },
+    {
+      "body": {
+        "questions": {
+          "difficulty": {
+            "criteria": [
+              "Trivial",
+              "Moderate",
+              "Hard",
+              "Expert"
+            ],
+            "instructions": "How difficult is this task?",
+            "type": "score"
+          },
+          "domain": {
+            "criteria": {
+              "code": "Programming",
+              "math": "Mathematics",
+              "other": "Anything else"
+            },
+            "instructions": "Which domain is this request about?",
+            "type": "choice"
+          },
+          "reasoning": {
+            "instructions": "Does this need multi-step reasoning?",
+            "type": "noul"
+          }
+        },
+        "state": "Hello! How are you today?Hello! How are you today?Hello! How are you today?Hello! How are you today?Hello! How are you today?Hello! How are you today?Hello! How are you today?Hello! How are you today?Hello! How are you today?Hello! How are you today?Hello! How are you today?Hello! How are you today?"
+      },
+      "id": "text-18"
+    },
+    {
+      "body": {
+        "questions": {
+          "difficulty": {
+            "criteria": [
+              "Trivial",
+              "Moderate",
+              "Hard",
+              "Expert"
+            ],
+            "instructions": "How difficult is this task?",
+            "type": "score"
+          },
+          "domain": {
+            "criteria": {
+              "code": "Programming",
+              "math": "Mathematics",
+              "other": "Anything else"
+            },
+            "instructions": "Which domain is this request about?",
+            "type": "choice"
+          },
+          "reasoning": {
+            "instructions": "Does this need multi-step reasoning?",
+            "type": "noul"
+          }
+        },
+        "state": "请解释数据库索引，并举一个 Python 查询的例子。请解释数据库索引，并举一个 Python 查询的例子。请解释数据库索引，并举一个 Python 查询的例子。请解释数据库索引，并举一个 Python 查询的例子。请解释数据库索引，并举一个 Python 查询的例子。请解释数据库索引，并举一个 Python 查询的例子。请解释数据库索引，并举一个 Python 查询的例子。请解释数据库索引，并举一个 Python 查询的例子。请解释数据库索引，并举一个 Python 查询的例子。请解释数据库索引，并举一个 Python 查询的例子。请解释数据库索引，并举一个 Python 查询的例子。请解释数据库索引，并举一个 Python 查询的例子。"
+      },
+      "id": "text-19"
+    },
+    {
+      "body": {
+        "questions": {
+          "difficulty": {
+            "criteria": [
+              "Trivial",
+              "Moderate",
+              "Hard",
+              "Expert"
+            ],
+            "instructions": "How difficult is this task?",
+            "type": "score"
+          },
+          "domain": {
+            "criteria": {
+              "code": "Programming",
+              "math": "Mathematics",
+              "other": "Anything else"
+            },
+            "instructions": "Which domain is this request about?",
+            "type": "choice"
+          },
+          "reasoning": {
+            "instructions": "Does this need multi-step reasoning?",
+            "type": "noul"
+          }
+        },
+        "state": "Compare the time complexity of quicksort and mergesort.Compare the time complexity of quicksort and mergesort.Compare the time complexity of quicksort and mergesort.Compare the time complexity of quicksort and mergesort.Compare the time complexity of quicksort and mergesort.Compare the time complexity of quicksort and mergesort.Compare the time complexity of quicksort and mergesort.Compare the time complexity of quicksort and mergesort.Compare the time complexity of quicksort and mergesort.Compare the time complexity of quicksort and mergesort.Compare the time complexity of quicksort and mergesort.Compare the time complexity of quicksort and mergesort."
+      },
+      "id": "text-20"
+    },
+    {
+      "body": {
+        "questions": {
+          "difficulty": {
+            "criteria": [
+              "Trivial",
+              "Moderate",
+              "Hard",
+              "Expert"
+            ],
+            "instructions": "How difficult is this task?",
+            "type": "score"
+          },
+          "domain": {
+            "criteria": {
+              "code": "Programming",
+              "math": "Mathematics",
+              "other": "Anything else"
+            },
+            "instructions": "Which domain is this request about?",
+            "type": "choice"
+          },
+          "reasoning": {
+            "instructions": "Does this need multi-step reasoning?",
+            "type": "noul"
+          }
+        },
+        "state": "Explain how photosynthesis converts sunlight into chemical energy.Explain how photosynthesis converts sunlight into chemical energy.Explain how photosynthesis converts sunlight into chemical energy.Explain how photosynthesis converts sunlight into chemical energy.Explain how photosynthesis converts sunlight into chemical energy.Explain how photosynthesis converts sunlight into chemical energy.Explain how photosynthesis converts sunlight into chemical energy.Explain how photosynthesis converts sunlight into chemical energy.Explain how photosynthesis converts sunlight into chemical energy.Explain how photosynthesis converts sunlight into chemical energy.Explain how photosynthesis converts sunlight into chemical energy.Explain how photosynthesis converts sunlight into chemical energy."
+      },
+      "id": "text-21"
+    },
+    {
+      "body": {
+        "questions": {
+          "difficulty": {
+            "criteria": [
+              "Trivial",
+              "Moderate",
+              "Hard",
+              "Expert"
+            ],
+            "instructions": "How difficult is this task?",
+            "type": "score"
+          },
+          "domain": {
+            "criteria": {
+              "code": "Programming",
+              "math": "Mathematics",
+              "other": "Anything else"
+            },
+            "instructions": "Which domain is this request about?",
+            "type": "choice"
+          },
+          "reasoning": {
+            "instructions": "Does this need multi-step reasoning?",
+            "type": "noul"
+          }
+        },
+        "state": "What is 17 multiplied by 23? Show your reasoning.What is 17 multiplied by 23? Show your reasoning.What is 17 multiplied by 23? Show your reasoning.What is 17 multiplied by 23? Show your reasoning.What is 17 multiplied by 23? Show your reasoning.What is 17 multiplied by 23? Show your reasoning.What is 17 multiplied by 23? Show your reasoning.What is 17 multiplied by 23? Show your reasoning.What is 17 multiplied by 23? Show your reasoning.What is 17 multiplied by 23? Show your reasoning.What is 17 multiplied by 23? Show your reasoning.What is 17 multiplied by 23? Show your reasoning."
+      },
+      "id": "text-22"
+    },
+    {
+      "body": {
+        "questions": {
+          "difficulty": {
+            "criteria": [
+              "Trivial",
+              "Moderate",
+              "Hard",
+              "Expert"
+            ],
+            "instructions": "How difficult is this task?",
+            "type": "score"
+          },
+          "domain": {
+            "criteria": {
+              "code": "Programming",
+              "math": "Mathematics",
+              "other": "Anything else"
+            },
+            "instructions": "Which domain is this request about?",
+            "type": "choice"
+          },
+          "reasoning": {
+            "instructions": "Does this need multi-step reasoning?",
+            "type": "noul"
+          }
+        },
+        "state": "Summarize this document and identify its main assumptions. Summarize this document and identify its main assumptions. Summarize this document and identify its main assumptions. Summarize this document and identify its main assumptions. Summarize this document and identify its main assumptions. Summarize this document and identify its main assumptions. Summarize this document and identify its main assumptions. Summarize this document and identify its main assumptions. Summarize this document and identify its main assumptions. Summarize this document and identify its main assumptions. Summarize this document and identify its main assumptions. Summarize this document and identify its main assumptions. "
+      },
+      "id": "text-23"
+    }
+  ],
+  "long_input": {
+    "body": {
+      "questions": {
+        "difficulty": {
+          "criteria": [
+            "Trivial",
+            "Moderate",
+            "Hard",
+            "Expert"
+          ],
+          "instructions": "How difficult is this task?",
+          "type": "score"
+        },
+        "domain": {
+          "criteria": {
+            "code": "Programming",
+            "math": "Mathematics",
+            "other": "Anything else"
+          },
+          "instructions": "Which domain is this request about?",
+          "type": "choice"
+        },
+        "reasoning": {
+          "instructions": "Does this need multi-step reasoning?",
+          "type": "noul"
+        }
+      },
+      "state": "Analyze this document. This paragraph describes software design, mathematics, and experimental evidence. This paragraph describes software design, mathematics, and experimental evidence. This paragraph describes software design, mathematics, and experimental evidence. This paragraph describes software design, mathematics, and experimental evidence. This paragraph describes software design, mathematics, and experimental evidence. This paragraph describes software design, mathematics, and experimental evidence. This paragraph describes software design, mathematics, and experimental evidence. This paragraph describes software design, mathematics, and experimental evidence. This paragraph describes software design, mathematics, and experimental evidence. This paragraph describes software design, mathematics, and experimental evidence. This paragraph describes software design, mathematics, and experimental evidence. This paragraph describes software design, mathematics, and experimental evidence. This paragraph describes software design, mathematics, and experimental evidence. This paragraph describes software design, mathematics, and experimental evidence. This paragraph describes software design, mathematics, and experimental evidence. This paragraph describes software design, mathematics, and experimental evidence. This paragraph describes software design, mathematics, and experimental evidence. This paragraph describes software design, mathematics, and experimental evidence. This paragraph describes software design, mathematics, and experimental evidence. This paragraph describes software design, mathematics, and experimental evidence. This paragraph describes software design, mathematics, and experimental evidence. This paragraph describes software design, mathematics, and experimental evidence. This paragraph describes software design, mathematics, and experimental evidence. This paragraph describes software design, mathematics, and experimental evidence. This paragraph describes software design, mathematics, and experimental evidence. This paragraph describes software design, mathematics, and experimental evidence. This paragraph describes software design, mathematics, and experimental evidence. This paragraph describes software design, mathematics, and experimental evidence. This paragraph describes software design, mathematics, and experimental evidence. This paragraph describes software design, mathematics, and experimental evidence. This paragraph describes software design, mathematics, and experimental evidence. This paragraph describes software design, mathematics, and experimental evidence. This paragraph describes software design, mathematics, and experimental evidence. This paragraph describes software design, mathematics, and experimental evidence. This paragraph describes software design, mathematics, and experimental evidence. This paragraph describes software design, mathematics, and experimental evidence. This paragraph describes software design, mathematics, and experimental evidence. This paragraph describes software design, mathematics, and experimental evidence. This paragraph describes software design, mathematics, and experimental evidence. This paragraph describes software design, mathematics, and experimental evidence. This paragraph describes software design, mathematics, and experimental evidence. This paragraph describes software design, mathematics, and experimental evidence. This paragraph describes software design, mathematics, and experimental evidence. This paragraph describes software design, mathematics, and experimental evidence. This paragraph describes software design, mathematics, and experimental evidence. This paragraph describes software design, mathematics, and experimental evidence. This paragraph describes software design, mathematics, and experimental evidence. This paragraph describes software design, mathematics, and experimental evidence. This paragraph describes software design, mathematics, and experimental evidence. This paragraph describes software design, mathematics, and experimental evidence. This paragraph describes software design, mathematics, and experimental evidence. This paragraph describes software design, mathematics, and experimental evidence. This paragraph describes software design, mathematics, and experimental evidence. This paragraph describes software design, mathematics, and experimental evidence. This paragraph describes software design, mathematics, and experimental evidence. This paragraph describes software design, mathematics, and experimental evidence. This paragraph describes software design, mathematics, and experimental evidence. This paragraph describes software design, mathematics, and experimental evidence. This paragraph describes software design, mathematics, and experimental evidence. This paragraph describes software design, mathematics, and experimental evidence. This paragraph describes software design, mathematics, and experimental evidence. This paragraph describes software design, mathematics, and experimental evidence. This paragraph describes software design, mathematics, and experimental evidence. This paragraph describes software design, mathematics, and experimental evidence. This paragraph describes software design, mathematics, and experimental evidence. This paragraph describes software design, mathematics, and experimental evidence. This paragraph describes software design, mathematics, and experimental evidence. This paragraph describes software design, mathematics, and experimental evidence. This paragraph describes software design, mathematics, and experimental evidence. This paragraph describes software design, mathematics, and experimental evidence. This paragraph describes software design, mathematics, and experimental evidence. This paragraph describes software design, mathematics, and experimental evidence. This paragraph describes software design, mathematics, and experimental evidence. This paragraph describes software design, mathematics, and experimental evidence. This paragraph describes software design, mathematics, and experimental evidence. This paragraph describes software design, mathematics, and experimental evidence. This paragraph describes software design, mathematics, and experimental evidence. This paragraph describes software design, mathematics, and experimental evidence. This paragraph describes software design, mathematics, and experimental evidence. This paragraph describes software design, mathematics, and experimental evidence. This paragraph describes software design, mathematics, and experimental evidence. This paragraph describes software design, mathematics, and experimental evidence. This paragraph describes software design, mathematics, and experimental evidence. This paragraph describes software design, mathematics, and experimental evidence. This paragraph describes software design, mathematics, and experimental evidence. This paragraph describes software design, mathematics, and experimental evidence. This paragraph describes software design, mathematics, and experimental evidence. This paragraph describes software design, mathematics, and experimental evidence. This paragraph describes software design, mathematics, and experimental evidence. This paragraph describes software design, mathematics, and experimental evidence. This paragraph describes software design, mathematics, and experimental evidence. This paragraph describes software design, mathematics, and experimental evidence. This paragraph describes software design, mathematics, and experimental evidence. This paragraph describes software design, mathematics, and experimental evidence. This paragraph describes software design, mathematics, and experimental evidence. This paragraph describes software design, mathematics, and experimental evidence. This paragraph describes software design, mathematics, and experimental evidence. This paragraph describes software design, mathematics, and experimental evidence. This paragraph describes software design, mathematics, and experimental evidence. This paragraph describes software design, mathematics, and experimental evidence. This paragraph describes software design, mathematics, and experimental evidence. This paragraph describes software design, mathematics, and experimental evidence. This paragraph describes software design, mathematics, and experimental evidence. This paragraph describes software design, mathematics, and experimental evidence. This paragraph describes software design, mathematics, and experimental evidence. This paragraph describes software design, mathematics, and experimental evidence. This paragraph describes software design, mathematics, and experimental evidence. This paragraph describes software design, mathematics, and experimental evidence. This paragraph describes software design, mathematics, and experimental evidence. This paragraph describes software design, mathematics, and experimental evidence. This paragraph describes software design, mathematics, and experimental evidence. This paragraph describes software design, mathematics, and experimental evidence. This paragraph describes software design, mathematics, and experimental evidence. This paragraph describes software design, mathematics, and experimental evidence. This paragraph describes software design, mathematics, and experimental evidence. This paragraph describes software design, mathematics, and experimental evidence. This paragraph describes software design, mathematics, and experimental evidence. This paragraph describes software design, mathematics, and experimental evidence. This paragraph describes software design, mathematics, and experimental evidence. This paragraph describes software design, mathematics, and experimental evidence. This paragraph describes software design, mathematics, and experimental evidence. This paragraph describes software design, mathematics, and experimental evidence. This paragraph describes software design, mathematics, and experimental evidence. This paragraph describes software design, mathematics, and experimental evidence. This paragraph describes software design, mathematics, and experimental evidence. This paragraph describes software design, mathematics, and experimental evidence. This paragraph describes software design, mathematics, and experimental evidence. This paragraph describes software design, mathematics, and experimental evidence. This paragraph describes software design, mathematics, and experimental evidence. This paragraph describes software design, mathematics, and experimental evidence. This paragraph describes software design, mathematics, and experimental evidence. This paragraph describes software design, mathematics, and experimental evidence. This paragraph describes software design, mathematics, and experimental evidence. This paragraph describes software design, mathematics, and experimental evidence. This paragraph describes software design, mathematics, and experimental evidence. This paragraph describes software design, mathematics, and experimental evidence. This paragraph describes software design, mathematics, and experimental evidence. This paragraph describes software design, mathematics, and experimental evidence. This paragraph describes software design, mathematics, and experimental evidence. This paragraph describes software design, mathematics, and experimental evidence. This paragraph describes software design, mathematics, and experimental evidence. This paragraph describes software design, mathematics, and experimental evidence. This paragraph describes software design, mathematics, and experimental evidence. This paragraph describes software design, mathematics, and experimental evidence. This paragraph describes software design, mathematics, and experimental evidence. This paragraph describes software design, mathematics, and experimental evidence. This paragraph describes software design, mathematics, and experimental evidence. This paragraph describes software design, mathematics, and experimental evidence. This paragraph describes software design, mathematics, and experimental evidence. This paragraph describes software design, mathematics, and experimental evidence. This paragraph describes software design, mathematics, and experimental evidence. This paragraph describes software design, mathematics, and experimental evidence. This paragraph describes software design, mathematics, and experimental evidence. This paragraph describes software design, mathematics, and experimental evidence. This paragraph describes software design, mathematics, and experimental evidence. This paragraph describes software design, mathematics, and experimental evidence. This paragraph describes software design, mathematics, and experimental evidence. This paragraph describes software design, mathematics, and experimental evidence. This paragraph describes software design, mathematics, and experimental evidence. This paragraph describes software design, mathematics, and experimental evidence. This paragraph describes software design, mathematics, and experimental evidence. This paragraph describes software design, mathematics, and experimental evidence. This paragraph describes software design, mathematics, and experimental evidence. This paragraph describes software design, mathematics, and experimental evidence. This paragraph describes software design, mathematics, and experimental evidence. This paragraph describes software design, mathematics, and experimental evidence. This paragraph describes software design, mathematics, and experimental evidence. This paragraph describes software design, mathematics, and experimental evidence. This paragraph describes software design, mathematics, and experimental evidence. This paragraph describes software design, mathematics, and experimental evidence. This paragraph describes software design, mathematics, and experimental evidence. This paragraph describes software design, mathematics, and experimental evidence. This paragraph describes software design, mathematics, and experimental evidence. This paragraph describes software design, mathematics, and experimental evidence. This paragraph describes software design, mathematics, and experimental evidence. This paragraph describes software design, mathematics, and experimental evidence. This paragraph describes software design, mathematics, and experimental evidence. This paragraph describes software design, mathematics, and experimental evidence. This paragraph describes software design, mathematics, and experimental evidence. This paragraph describes software design, mathematics, and experimental evidence. This paragraph describes software design, mathematics, and experimental evidence. This paragraph describes software design, mathematics, and experimental evidence. This paragraph describes software design, mathematics, and experimental evidence. This paragraph describes software design, mathematics, and experimental evidence. This paragraph describes software design, mathematics, and experimental evidence. This paragraph describes software design, mathematics, and experimental evidence. This paragraph describes software design, mathematics, and experimental evidence. This paragraph describes software design, mathematics, and experimental evidence. This paragraph describes software design, mathematics, and experimental evidence. This paragraph describes software design, mathematics, and experimental evidence. This paragraph describes software design, mathematics, and experimental evidence. This paragraph describes software design, mathematics, and experimental evidence. This paragraph describes software design, mathematics, and experimental evidence. This paragraph describes software design, mathematics, and experimental evidence. This paragraph describes software design, mathematics, and experimental evidence. This paragraph describes software design, mathematics, and experimental evidence. This paragraph describes software design, mathematics, and experimental evidence. This paragraph describes software design, mathematics, and experimental evidence. This paragraph describes software design, mathematics, and experimental evidence. This paragraph describes software design, mathematics, and experimental evidence. This paragraph describes software design, mathematics, and experimental evidence. This paragraph describes software design, mathematics, and experimental evidence. This paragraph describes software design, mathematics, and experimental evidence. This paragraph describes software design, mathematics, and experimental evidence. This paragraph describes software design, mathematics, and experimental evidence. This paragraph describes software design, mathematics, and experimental evidence. This paragraph describes software design, mathematics, and experimental evidence. This paragraph describes software design, mathematics, and experimental evidence. This paragraph describes software design, mathematics, and experimental evidence. This paragraph describes software design, mathematics, and experimental evidence. This paragraph describes software design, mathematics, and experimental evidence. This paragraph describes software design, mathematics, and experimental evidence. This paragraph describes software design, mathematics, and experimental evidence. This paragraph describes software design, mathematics, and experimental evidence. This paragraph describes software design, mathematics, and experimental evidence. This paragraph describes software design, mathematics, and experimental evidence. This paragraph describes software design, mathematics, and experimental evidence. This paragraph describes software design, mathematics, and experimental evidence. This paragraph describes software design, mathematics, and experimental evidence. This paragraph describes software design, mathematics, and experimental evidence. This paragraph describes software design, mathematics, and experimental evidence. This paragraph describes software design, mathematics, and experimental evidence. This paragraph describes software design, mathematics, and experimental evidence. This paragraph describes software design, mathematics, and experimental evidence. This paragraph describes software design, mathematics, and experimental evidence. This paragraph describes software design, mathematics, and experimental evidence. This paragraph describes software design, mathematics, and experimental evidence. This paragraph describes software design, mathematics, and experimental evidence. This paragraph describes software design, mathematics, and experimental evidence. This paragraph describes software design, mathematics, and experimental evidence. This paragraph describes software design, mathematics, and experimental evidence. This paragraph describes software design, mathematics, and experimental evidence. This paragraph describes software design, mathematics, and experimental evidence. This paragraph describes software design, mathematics, and experimental evidence. This paragraph describes software design, mathematics, and experimental evidence. This paragraph describes software design, mathematics, and experimental evidence. This paragraph describes software design, mathematics, and experimental evidence. This paragraph describes software design, mathematics, and experimental evidence. This paragraph describes software design, mathematics, and experimental evidence. This paragraph describes software design, mathematics, and experimental evidence. This paragraph describes software design, mathematics, and experimental evidence. This paragraph describes software design, mathematics, and experimental evidence. This paragraph describes software design, mathematics, and experimental evidence. This paragraph describes software design, mathematics, and experimental evidence. This paragraph describes software design, mathematics, and experimental evidence. This paragraph describes software design, mathematics, and experimental evidence. This paragraph describes software design, mathematics, and experimental evidence. This paragraph describes software design, mathematics, and experimental evidence. This paragraph describes software design, mathematics, and experimental evidence. This paragraph describes software design, mathematics, and experimental evidence. This paragraph describes software design, mathematics, and experimental evidence. This paragraph describes software design, mathematics, and experimental evidence. This paragraph describes software design, mathematics, and experimental evidence. This paragraph describes software design, mathematics, and experimental evidence. This paragraph describes software design, mathematics, and experimental evidence. This paragraph describes software design, mathematics, and experimental evidence. This paragraph describes software design, mathematics, and experimental evidence. This paragraph describes software design, mathematics, and experimental evidence. This paragraph describes software design, mathematics, and experimental evidence. This paragraph describes software design, mathematics, and experimental evidence. This paragraph describes software design, mathematics, and experimental evidence. This paragraph describes software design, mathematics, and experimental evidence. This paragraph describes software design, mathematics, and experimental evidence. This paragraph describes software design, mathematics, and experimental evidence. This paragraph describes software design, mathematics, and experimental evidence. This paragraph describes software design, mathematics, and experimental evidence. This paragraph describes software design, mathematics, and experimental evidence. This paragraph describes software design, mathematics, and experimental evidence. This paragraph describes software design, mathematics, and experimental evidence. This paragraph describes software design, mathematics, and experimental evidence. This paragraph describes software design, mathematics, and experimental evidence. This paragraph describes software design, mathematics, and experimental evidence. This paragraph describes software design, mathematics, and experimental evidence. This paragraph describes software design, mathematics, and experimental evidence. This paragraph describes software design, mathematics, and experimental evidence. This paragraph describes software design, mathematics, and experimental evidence. This paragraph describes software design, mathematics, and experimental evidence. This paragraph describes software design, mathematics, and experimental evidence. This paragraph describes software design, mathematics, and experimental evidence. This paragraph describes software design, mathematics, and experimental evidence. This paragraph describes software design, mathematics, and experimental evidence. This paragraph describes software design, mathematics, and experimental evidence. This paragraph describes software design, mathematics, and experimental evidence. This paragraph describes software design, mathematics, and experimental evidence. This paragraph describes software design, mathematics, and experimental evidence. This paragraph describes software design, mathematics, and experimental evidence. This paragraph describes software design, mathematics, and experimental evidence. This paragraph describes software design, mathematics, and experimental evidence. This paragraph describes software design, mathematics, and experimental evidence. This paragraph describes software design, mathematics, and experimental evidence. This paragraph describes software design, mathematics, and experimental evidence. This paragraph describes software design, mathematics, and experimental evidence. This paragraph describes software design, mathematics, and experimental evidence. This paragraph describes software design, mathematics, and experimental evidence. This paragraph describes software design, mathematics, and experimental evidence. This paragraph describes software design, mathematics, and experimental evidence. This paragraph describes software design, mathematics, and experimental evidence. This paragraph describes software design, mathematics, and experimental evidence. This paragraph describes software design, mathematics, and experimental evidence. This paragraph describes software design, mathematics, and experimental evidence. This paragraph describes software design, mathematics, and experimental evidence. This paragraph describes software design, mathematics, and experimental evidence. This paragraph describes software design, mathematics, and experimental evidence. This paragraph describes software design, mathematics, and experimental evidence. This paragraph describes software design, mathematics, and experimental evidence. This paragraph describes software design, mathematics, and experimental evidence. This paragraph describes software design, mathematics, and experimental evidence. This paragraph describes software design, mathematics, and experimental evidence. This paragraph describes software design, mathematics, and experimental evidence. This paragraph describes software design, mathematics, and experimental evidence. This paragraph describes software design, mathematics, and experimental evidence. This paragraph describes software design, mathematics, and experimental evidence. This paragraph describes software design, mathematics, and experimental evidence. This paragraph describes software design, mathematics, and experimental evidence. This paragraph describes software design, mathematics, and experimental evidence. This paragraph describes software design, mathematics, and experimental evidence. This paragraph describes software design, mathematics, and experimental evidence. This paragraph describes software design, mathematics, and experimental evidence. This paragraph describes software design, mathematics, and experimental evidence. This paragraph describes software design, mathematics, and experimental evidence. This paragraph describes software design, mathematics, and experimental evidence. This paragraph describes software design, mathematics, and experimental evidence. This paragraph describes software design, mathematics, and experimental evidence. This paragraph describes software design, mathematics, and experimental evidence. This paragraph describes software design, mathematics, and experimental evidence. This paragraph describes software design, mathematics, and experimental evidence. This paragraph describes software design, mathematics, and experimental evidence. This paragraph describes software design, mathematics, and experimental evidence. This paragraph describes software design, mathematics, and experimental evidence. This paragraph describes software design, mathematics, and experimental evidence. This paragraph describes software design, mathematics, and experimental evidence. This paragraph describes software design, mathematics, and experimental evidence. This paragraph describes software design, mathematics, and experimental evidence. This paragraph describes software design, mathematics, and experimental evidence. This paragraph describes software design, mathematics, and experimental evidence. This paragraph describes software design, mathematics, and experimental evidence. This paragraph describes software design, mathematics, and experimental evidence. This paragraph describes software design, mathematics, and experimental evidence. This paragraph describes software design, mathematics, and experimental evidence. This paragraph describes software design, mathematics, and experimental evidence. This paragraph describes software design, mathematics, and experimental evidence. This paragraph describes software design, mathematics, and experimental evidence. This paragraph describes software design, mathematics, and experimental evidence. This paragraph describes software design, mathematics, and experimental evidence. This paragraph describes software design, mathematics, and experimental evidence. This paragraph describes software design, mathematics, and experimental evidence. This paragraph describes software design, mathematics, and experimental evidence. This paragraph describes software design, mathematics, and experimental evidence. This paragraph describes software design, mathematics, and experimental evidence. This paragraph describes software design, mathematics, and experimental evidence. This paragraph describes software design, mathematics, and experimental evidence. This paragraph describes software design, mathematics, and experimental evidence. This paragraph describes software design, mathematics, and experimental evidence. This paragraph describes software design, mathematics, and experimental evidence. This paragraph describes software design, mathematics, and experimental evidence. This paragraph describes software design, mathematics, and experimental evidence. This paragraph describes software design, mathematics, and experimental evidence. This paragraph describes software design, mathematics, and experimental evidence. This paragraph describes software design, mathematics, and experimental evidence. This paragraph describes software design, mathematics, and experimental evidence. This paragraph describes software design, mathematics, and experimental evidence. This paragraph describes software design, mathematics, and experimental evidence. This paragraph describes software design, mathematics, and experimental evidence. This paragraph describes software design, mathematics, and experimental evidence. This paragraph describes software design, mathematics, and experimental evidence. This paragraph describes software design, mathematics, and experimental evidence. This paragraph describes software design, mathematics, and experimental evidence. This paragraph describes software design, mathematics, and experimental evidence. This paragraph describes software design, mathematics, and experimental evidence. This paragraph describes software design, mathematics, and experimental evidence. This paragraph describes software design, mathematics, and experimental evidence. This paragraph describes software design, mathematics, and experimental evidence. This paragraph describes software design, mathematics, and experimental evidence. This paragraph describes software design, mathematics, and experimental evidence. This paragraph describes software design, mathematics, and experimental evidence. This paragraph describes software design, mathematics, and experimental evidence. This paragraph describes software design, mathematics, and experimental evidence. This paragraph describes software design, mathematics, and experimental evidence. This paragraph describes software design, mathematics, and experimental evidence. This paragraph describes software design, mathematics, and experimental evidence. This paragraph describes software design, mathematics, and experimental evidence. This paragraph describes software design, mathematics, and experimental evidence. This paragraph describes software design, mathematics, and experimental evidence. This paragraph describes software design, mathematics, and experimental evidence. This paragraph describes software design, mathematics, and experimental evidence. This paragraph describes software design, mathematics, and experimental evidence. This paragraph describes software design, mathematics, and experimental evidence. This paragraph describes software design, mathematics, and experimental evidence. This paragraph describes software design, mathematics, and experimental evidence. This paragraph describes software design, mathematics, and experimental evidence. This paragraph describes software design, mathematics, and experimental evidence. This paragraph describes software design, mathematics, and experimental evidence. This paragraph describes software design, mathematics, and experimental evidence. This paragraph describes software design, mathematics, and experimental evidence. This paragraph describes software design, mathematics, and experimental evidence. This paragraph describes software design, mathematics, and experimental evidence. This paragraph describes software design, mathematics, and experimental evidence. This paragraph describes software design, mathematics, and experimental evidence. This paragraph describes software design, mathematics, and experimental evidence. This paragraph describes software design, mathematics, and experimental evidence. This paragraph describes software design, mathematics, and experimental evidence. This paragraph describes software design, mathematics, and experimental evidence. This paragraph describes software design, mathematics, and experimental evidence. This paragraph describes software design, mathematics, and experimental evidence. This paragraph describes software design, mathematics, and experimental evidence. This paragraph describes software design, mathematics, and experimental evidence. This paragraph describes software design, mathematics, and experimental evidence. This paragraph describes software design, mathematics, and experimental evidence. This paragraph describes software design, mathematics, and experimental evidence. This paragraph describes software design, mathematics, and experimental evidence. This paragraph describes software design, mathematics, and experimental evidence. This paragraph describes software design, mathematics, and experimental evidence. This paragraph describes software design, mathematics, and experimental evidence. This paragraph describes software design, mathematics, and experimental evidence. This paragraph describes software design, mathematics, and experimental evidence. This paragraph describes software design, mathematics, and experimental evidence. This paragraph describes software design, mathematics, and experimental evidence. This paragraph describes software design, mathematics, and experimental evidence. This paragraph describes software design, mathematics, and experimental evidence. This paragraph describes software design, mathematics, and experimental evidence. This paragraph describes software design, mathematics, and experimental evidence. This paragraph describes software design, mathematics, and experimental evidence. This paragraph describes software design, mathematics, and experimental evidence. This paragraph describes software design, mathematics, and experimental evidence. This paragraph describes software design, mathematics, and experimental evidence. This paragraph describes software design, mathematics, and experimental evidence. This paragraph describes software design, mathematics, and experimental evidence. This paragraph describes software design, mathematics, and experimental evidence. This paragraph describes software design, mathematics, and experimental evidence. This paragraph describes software design, mathematics, and experimental evidence. This paragraph describes software design, mathematics, and experimental evidence. This paragraph describes software design, mathematics, and experimental evidence. This paragraph describes software design, mathematics, and experimental evidence. This paragraph describes software design, mathematics, and experimental evidence. This paragraph describes software design, mathematics, and experimental evidence. This paragraph describes software design, mathematics, and experimental evidence. This paragraph describes software design, mathematics, and experimental evidence. This paragraph describes software design, mathematics, and experimental evidence. This paragraph describes software design, mathematics, and experimental evidence. This paragraph describes software design, mathematics, and experimental evidence. This paragraph describes software design, mathematics, and experimental evidence. This paragraph describes software design, mathematics, and experimental evidence. This paragraph describes software design, mathematics, and experimental evidence. This paragraph describes software design, mathematics, and experimental evidence. This paragraph describes software design, mathematics, and experimental evidence. This paragraph describes software design, mathematics, and experimental evidence. This paragraph describes software design, mathematics, and experimental evidence. This paragraph describes software design, mathematics, and experimental evidence. This paragraph describes software design, mathematics, and experimental evidence. This paragraph describes software design, mathematics, and experimental evidence. This paragraph describes software design, mathematics, and experimental evidence. This paragraph describes software design, mathematics, and experimental evidence. This paragraph describes software design, mathematics, and experimental evidence. This paragraph describes software design, mathematics, and experimental evidence. This paragraph describes software design, mathematics, and experimental evidence. This paragraph describes software design, mathematics, and experimental evidence. This paragraph describes software design, mathematics, and experimental evidence. This paragraph describes software design, mathematics, and experimental evidence. This paragraph describes software design, mathematics, and experimental evidence. This paragraph describes software design, mathematics, and experimental evidence. This paragraph describes software design, mathematics, and experimental evidence. This paragraph describes software design, mathematics, and experimental evidence. This paragraph describes software design, mathematics, and experimental evidence. This paragraph describes software design, mathematics, and experimental evidence. This paragraph describes software design, mathematics, and experimental evidence. This paragraph describes software design, mathematics, and experimental evidence. This paragraph describes software design, mathematics, and experimental evidence. This paragraph describes software design, mathematics, and experimental evidence. This paragraph describes software design, mathematics, and experimental evidence. This paragraph describes software design, mathematics, and experimental evidence. This paragraph describes software design, mathematics, and experimental evidence. This paragraph describes software design, mathematics, and experimental evidence. This paragraph describes software design, mathematics, and experimental evidence. This paragraph describes software design, mathematics, and experimental evidence. This paragraph describes software design, mathematics, and experimental evidence. This paragraph describes software design, mathematics, and experimental evidence. This paragraph describes software design, mathematics, and experimental evidence. This paragraph describes software design, mathematics, and experimental evidence. This paragraph describes software design, mathematics, and experimental evidence. This paragraph describes software design, mathematics, and experimental evidence. This paragraph describes software design, mathematics, and experimental evidence. This paragraph describes software design, mathematics, and experimental evidence. This paragraph describes software design, mathematics, and experimental evidence. This paragraph describes software design, mathematics, and experimental evidence. This paragraph describes software design, mathematics, and experimental evidence. This paragraph describes software design, mathematics, and experimental evidence. This paragraph describes software design, mathematics, and experimental evidence. This paragraph describes software design, mathematics, and experimental evidence. This paragraph describes software design, mathematics, and experimental evidence. This paragraph describes software design, mathematics, and experimental evidence. This paragraph describes software design, mathematics, and experimental evidence. This paragraph describes software design, mathematics, and experimental evidence. This paragraph describes software design, mathematics, and experimental evidence. This paragraph describes software design, mathematics, and experimental evidence. This paragraph describes software design, mathematics, and experimental evidence. This paragraph describes software design, mathematics, and experimental evidence. This paragraph describes software design, mathematics, and experimental evidence. This paragraph describes software design, mathematics, and experimental evidence. This paragraph describes software design, mathematics, and experimental evidence. This paragraph describes software design, mathematics, and experimental evidence. This paragraph describes software design, mathematics, and experimental evidence. This paragraph describes software design, mathematics, and experimental evidence. This paragraph describes software design, mathematics, and experimental evidence. This paragraph describes software design, mathematics, and experimental evidence. This paragraph describes software design, mathematics, and experimental evidence. This paragraph describes software design, mathematics, and experimental evidence. This paragraph describes software design, mathematics, and experimental evidence. This paragraph describes software design, mathematics, and experimental evidence. This paragraph describes software design, mathematics, and experimental evidence. This paragraph describes software design, mathematics, and experimental evidence. This paragraph describes software design, mathematics, and experimental evidence. This paragraph describes software design, mathematics, and experimental evidence. This paragraph describes software design, mathematics, and experimental evidence. This paragraph describes software design, mathematics, and experimental evidence. This paragraph describes software design, mathematics, and experimental evidence. This paragraph describes software design, mathematics, and experimental evidence. This paragraph describes software design, mathematics, and experimental evidence. This paragraph describes software design, mathematics, and experimental evidence. This paragraph describes software design, mathematics, and experimental evidence. This paragraph describes software design, mathematics, and experimental evidence. This paragraph describes software design, mathematics, and experimental evidence. This paragraph describes software design, mathematics, and experimental evidence. This paragraph describes software design, mathematics, and experimental evidence. This paragraph describes software design, mathematics, and experimental evidence. This paragraph describes software design, mathematics, and experimental evidence. This paragraph describes software design, mathematics, and experimental evidence. This paragraph describes software design, mathematics, and experimental evidence. This paragraph describes software design, mathematics, and experimental evidence. This paragraph describes software design, mathematics, and experimental evidence. This paragraph describes software design, mathematics, and experimental evidence. This paragraph describes software design, mathematics, and experimental evidence. This paragraph describes software design, mathematics, and experimental evidence. This paragraph describes software design, mathematics, and experimental evidence. This paragraph describes software design, mathematics, and experimental evidence. This paragraph describes software design, mathematics, and experimental evidence. This paragraph describes software design, mathematics, and experimental evidence. This paragraph describes software design, mathematics, and experimental evidence. This paragraph describes software design, mathematics, and experimental evidence. This paragraph describes software design, mathematics, and experimental evidence. This paragraph describes software design, mathematics, and experimental evidence. This paragraph describes software design, mathematics, and experimental evidence. This paragraph describes software design, mathematics, and experimental evidence. This paragraph describes software design, mathematics, and experimental evidence. This paragraph describes software design, mathematics, and experimental evidence. This paragraph describes software design, mathematics, and experimental evidence. This paragraph describes software design, mathematics, and experimental evidence. This paragraph describes software design, mathematics, and experimental evidence. This paragraph describes software design, mathematics, and experimental evidence. This paragraph describes software design, mathematics, and experimental evidence. This paragraph describes software design, mathematics, and experimental evidence. This paragraph describes software design, mathematics, and experimental evidence. This paragraph describes software design, mathematics, and experimental evidence. This paragraph describes software design, mathematics, and experimental evidence. This paragraph describes software design, mathematics, and experimental evidence. This paragraph describes software design, mathematics, and experimental evidence. This paragraph describes software design, mathematics, and experimental evidence. This paragraph describes software design, mathematics, and experimental evidence. This paragraph describes software design, mathematics, and experimental evidence. This paragraph describes software design, mathematics, and experimental evidence. This paragraph describes software design, mathematics, and experimental evidence. This paragraph describes software design, mathematics, and experimental evidence. This paragraph describes software design, mathematics, and experimental evidence. This paragraph describes software design, mathematics, and experimental evidence. This paragraph describes software design, mathematics, and experimental evidence. This paragraph describes software design, mathematics, and experimental evidence. This paragraph describes software design, mathematics, and experimental evidence. This paragraph describes software design, mathematics, and experimental evidence. This paragraph describes software design, mathematics, and experimental evidence. This paragraph describes software design, mathematics, and experimental evidence. This paragraph describes software design, mathematics, and experimental evidence. This paragraph describes software design, mathematics, and experimental evidence. This paragraph describes software design, mathematics, and experimental evidence. This paragraph describes software design, mathematics, and experimental evidence. This paragraph describes software design, mathematics, and experimental evidence. This paragraph describes software design, mathematics, and experimental evidence. This paragraph describes software design, mathematics, and experimental evidence. This paragraph describes software design, mathematics, and experimental evidence. This paragraph describes software design, mathematics, and experimental evidence. This paragraph describes software design, mathematics, and experimental evidence. This paragraph describes software design, mathematics, and experimental evidence. This paragraph describes software design, mathematics, and experimental evidence. This paragraph describes software design, mathematics, and experimental evidence. This paragraph describes software design, mathematics, and experimental evidence. This paragraph describes software design, mathematics, and experimental evidence. This paragraph describes software design, mathematics, and experimental evidence. This paragraph describes software design, mathematics, and experimental evidence. This paragraph describes software design, mathematics, and experimental evidence. This paragraph describes software design, mathematics, and experimental evidence. This paragraph describes software design, mathematics, and experimental evidence. This paragraph describes software design, mathematics, and experimental evidence. This paragraph describes software design, mathematics, and experimental evidence. This paragraph describes software design, mathematics, and experimental evidence. This paragraph describes software design, mathematics, and experimental evidence. This paragraph describes software design, mathematics, and experimental evidence. This paragraph describes software design, mathematics, and experimental evidence. This paragraph describes software design, mathematics, and experimental evidence. This paragraph describes software design, mathematics, and experimental evidence. This paragraph describes software design, mathematics, and experimental evidence. This paragraph describes software design, mathematics, and experimental evidence. This paragraph describes software design, mathematics, and experimental evidence. This paragraph describes software design, mathematics, and experimental evidence. This paragraph describes software design, mathematics, and experimental evidence. This paragraph describes software design, mathematics, and experimental evidence. This paragraph describes software design, mathematics, and experimental evidence. This paragraph describes software design, mathematics, and experimental evidence. This paragraph describes software design, mathematics, and experimental evidence. This paragraph describes software design, mathematics, and experimental evidence. This paragraph describes software design, mathematics, and experimental evidence. This paragraph describes software design, mathematics, and experimental evidence. This paragraph describes software design, mathematics, and experimental evidence. This paragraph describes software design, mathematics, and experimental evidence. This paragraph describes software design, mathematics, and experimental evidence. This paragraph describes software design, mathematics, and experimental evidence. This paragraph describes software design, mathematics, and experimental evidence. This paragraph describes software design, mathematics, and experimental evidence. This paragraph describes software design, mathematics, and experimental evidence. This paragraph describes software design, mathematics, and experimental evidence. This paragraph describes software design, mathematics, and experimental evidence. This paragraph describes software design, mathematics, and experimental evidence. This paragraph describes software design, mathematics, and experimental evidence. This paragraph describes software design, mathematics, and experimental evidence. This paragraph describes software design, mathematics, and experimental evidence. This paragraph describes software design, mathematics, and experimental evidence. This paragraph describes software design, mathematics, and experimental evidence. This paragraph describes software design, mathematics, and experimental evidence. This paragraph describes software design, mathematics, and experimental evidence. This paragraph describes software design, mathematics, and experimental evidence. This paragraph describes software design, mathematics, and experimental evidence. This paragraph describes software design, mathematics, and experimental evidence. This paragraph describes software design, mathematics, and experimental evidence. This paragraph describes software design, mathematics, and experimental evidence. This paragraph describes software design, mathematics, and experimental evidence. This paragraph describes software design, mathematics, and experimental evidence. This paragraph describes software design, mathematics, and experimental evidence. This paragraph describes software design, mathematics, and experimental evidence. This paragraph describes software design, mathematics, and experimental evidence. This paragraph describes software design, mathematics, and experimental evidence. This paragraph describes software design, mathematics, and experimental evidence. This paragraph describes software design, mathematics, and experimental evidence. This paragraph describes software design, mathematics, and experimental evidence. This paragraph describes software design, mathematics, and experimental evidence. This paragraph describes software design, mathematics, and experimental evidence. This paragraph describes software design, mathematics, and experimental evidence. This paragraph describes software design, mathematics, and experimental evidence. This paragraph describes software design, mathematics, and experimental evidence. This paragraph describes software design, mathematics, and experimental evidence. This paragraph describes software design, mathematics, and experimental evidence. This paragraph describes software design, mathematics, and experimental evidence. This paragraph describes software design, mathematics, and experimental evidence. This paragraph describes software design, mathematics, and experimental evidence. This paragraph describes software design, mathematics, and experimental evidence. This paragraph describes software design, mathematics, and experimental evidence. This paragraph describes software design, mathematics, and experimental evidence. This paragraph describes software design, mathematics, and experimental evidence. This paragraph describes software design, mathematics, and experimental evidence. This paragraph describes software design, mathematics, and experimental evidence. This paragraph describes software design, mathematics, and experimental evidence. This paragraph describes software design, mathematics, and experimental evidence. This paragraph describes software design, mathematics, and experimental evidence. This paragraph describes software design, mathematics, and experimental evidence. This paragraph describes software design, mathematics, and experimental evidence. This paragraph describes software design, mathematics, and experimental evidence. This paragraph describes software design, mathematics, and experimental evidence. This paragraph describes software design, mathematics, and experimental evidence. This paragraph describes software design, mathematics, and experimental evidence. This paragraph describes software design, mathematics, and experimental evidence. This paragraph describes software design, mathematics, and experimental evidence. This paragraph describes software design, mathematics, and experimental evidence. This paragraph describes software design, mathematics, and experimental evidence. This paragraph describes software design, mathematics, and experimental evidence. This paragraph describes software design, mathematics, and experimental evidence. This paragraph describes software design, mathematics, and experimental evidence. This paragraph describes software design, mathematics, and experimental evidence. This paragraph describes software design, mathematics, and experimental evidence. This paragraph describes software design, mathematics, and experimental evidence. This paragraph describes software design, mathematics, and experimental evidence. This paragraph describes software design, mathematics, and experimental evidence. This paragraph describes software design, mathematics, and experimental evidence. This paragraph describes software design, mathematics, and experimental evidence. This paragraph describes software design, mathematics, and experimental evidence. This paragraph describes software design, mathematics, and experimental evidence. This paragraph describes software design, mathematics, and experimental evidence. This paragraph describes software design, mathematics, and experimental evidence. This paragraph describes software design, mathematics, and experimental evidence. This paragraph describes software design, mathematics, and experimental evidence. This paragraph describes software design, mathematics, and experimental evidence. This paragraph describes software design, mathematics, and experimental evidence. This paragraph describes software design, mathematics, and experimental evidence. This paragraph describes software design, mathematics, and experimental evidence. This paragraph describes software design, mathematics, and experimental evidence. This paragraph describes software design, mathematics, and experimental evidence. This paragraph describes software design, mathematics, and experimental evidence. This paragraph describes software design, mathematics, and experimental evidence. This paragraph describes software design, mathematics, and experimental evidence. This paragraph describes software design, mathematics, and experimental evidence. This paragraph describes software design, mathematics, and experimental evidence. This paragraph describes software design, mathematics, and experimental evidence. This paragraph describes software design, mathematics, and experimental evidence. This paragraph describes software design, mathematics, and experimental evidence. This paragraph describes software design, mathematics, and experimental evidence. "
+    },
+    "id": "long-8192-target"
+  }
+}
